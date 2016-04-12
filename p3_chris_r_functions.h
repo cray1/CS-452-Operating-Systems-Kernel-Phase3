@@ -10,5 +10,9 @@
 
 #include "p3_globals.h"
 
+void	P3_Switch(int old, int new);
+void	P3_Quit(int pid);
+void FaultHandler(int type, void *arg);
+int Pager(void);
 
 #endif /* P3_CHRIS_R_FUNCTIONS_H_ */

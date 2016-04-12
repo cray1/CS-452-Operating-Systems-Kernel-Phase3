@@ -10,5 +10,6 @@
 
 #include "p3_globals.h"
 
+void	P3_Fork(int pid);
 
 #endif /* P3_CHRIS_S_FUNCTIONS_H_ */

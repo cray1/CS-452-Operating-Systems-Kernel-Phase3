@@ -2,9 +2,22 @@
 #include "p3_globals.h"
 
 
+
+Process	processes[P1_MAXPROC];
+int	numPages = 0;
+int	numFrames = 0;
+
+
+
+void	*vmRegion = NULL;
+
+P3_VmStats	P3_vmStats;
+
+int pagerMbox = -1;
+
+
+
 int enableVerboseDebug = 0; // will print detailed progress for all functions when set to 1
-Queue_ll sleep_q;
-P1_Semaphore sleep_q_sem;
 
 /**
  * Checks for Kernel Mode
@@ -56,3 +69,31 @@ void switchToUserMode(){
 		USLOSS_PsrSet(USLOSS_PsrGet()&0xfe);
 	}
 }
+
+
+
+
+
+/*
+ * Helper routines
+ */
+
+void
+CheckPid(int pid)
+{
+    if ((pid < 0) || (pid >= P1_MAXPROC)) {
+    	USLOSS_Console("Invalid pid\n");
+    	USLOSS_Halt(1);
+    }
+}
+
+void
+CheckMode(void)
+{
+    if ((USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE) == 0) {
+	   USLOSS_Console("Invoking protected routine from user mode\n");
+	   USLOSS_Halt(1);
+    }
+}
+
+
