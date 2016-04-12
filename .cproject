@@ -31,7 +31,9 @@
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="/home/chris/Dropbox/452-students/lib/linux/libuser1.3.a"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="/home/chris/Dropbox/452-students/lib/linux/libusloss2.12.a"/>
 								</option>
-								<option id="gnu.c.link.option.paths.764968150" name="Library search path (-L)" superClass="gnu.c.link.option.paths" valueType="libPaths"/>
+								<option id="gnu.c.link.option.paths.764968150" name="Library search path (-L)" superClass="gnu.c.link.option.paths" valueType="libPaths">
+									<listOptionValue builtIn="false" value="/home/chris/Dropbox/452-students/lib/linux"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1077057000" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>

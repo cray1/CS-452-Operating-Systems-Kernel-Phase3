@@ -74,7 +74,9 @@ Child(void *arg)
     USLOSS_Console("Child \"%s\" done.\n", name);
     return 0;
 }
-
+int P3_Startup(void *arg){
+	return 0;
+}
 
 int
 P4_Startup(void *arg)

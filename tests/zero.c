@@ -47,6 +47,9 @@ debug(char *fmt, ...)
 	USLOSS_VConsole(fmt, ap);
     }
 }
+int P3_Startup(void *arg){
+	return 0;
+}
 
 
 static int

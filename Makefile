@@ -31,7 +31,7 @@ PHASE1_VERSION = 1.5
 PHASE2_VERSION = 2.0
 
 #Set to the version of the user library you want to use.
-USER_VERSION = 1.2
+USER_VERSION = 1.3
 
 SRCS = $(wildcard *.c)
 
