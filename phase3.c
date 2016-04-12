@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <phase3.h>
 #include <string.h>
+#include <p3_globals.h>
 
 /*
  * Everybody uses the same tag.
@@ -66,8 +67,21 @@ static void FaultHandler(int type, void *arg);
 void	P3_Fork(int pid);
 void	P3_Switch(int old, int new);
 void	P3_Quit(int pid);
+int pid;
 
 
+
+int P3_Startup(void *arg){
+	int status;
+
+	/*
+	 *  Fork P4_Startup process. Do this after all other setup code.
+	 */
+	pid = P2_Spawn("P4_Startup", P4_Startup, NULL, 4 * USLOSS_MIN_STACK, 3);
+	pid = P2_Wait(&status);
+
+	return 0;
+}
 
 /*
  *----------------------------------------------------------------------
