@@ -41,13 +41,16 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	 * Create the page fault mailbox and fork the pagers here.
 	 */
 
+
+	pagerMbox = P2_MboxCreate(P1_MAXPROC, sizeof(Fault));//added by cray1
+
 	memset((char *) &P3_vmStats, 0, sizeof(P3_VmStats));
 	P3_vmStats.pages = pages;
 	P3_vmStats.frames = frames;
 	numPages = pages;
 	numFrames = frames;
 
-	IsVmInitialized = TRUE;
+	IsVmInitialized = TRUE; //added by cray1
 	return numPages * USLOSS_MmuPageSize();
 }
 
