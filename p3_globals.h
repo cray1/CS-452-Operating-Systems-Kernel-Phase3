@@ -64,6 +64,7 @@ extern int	numFrames;
 extern void	*vmRegion;
 extern P3_VmStats	P3_vmStats;
 extern int pagerMbox;
+extern int IsVmInitialized;
 
 /*
  * Everybody uses the same tag.

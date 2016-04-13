@@ -1,7 +1,5 @@
 #include "p3_globals.h"
 
-
-
 /*
  *----------------------------------------------------------------------
  *
@@ -19,28 +17,26 @@
  *
  *----------------------------------------------------------------------
  */
-void
-P3_Quit(pid)
-    int		pid;
-{
-    CheckMode();
-    CheckPid(pid);
-    assert(processes[pid].numPages > 0);
-    assert(processes[pid].pageTable != NULL);
+void P3_Quit(pid)
+	int pid; {
+	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
+		CheckMode();
+		CheckPid(pid);
+		assert(processes[pid].numPages > 0);
+		assert(processes[pid].pageTable != NULL);
 
-    /*
-     * Free any of the process's pages that are on disk and free any page frames the
-     * process is using.
-     */
+		/*
+		 * Free any of the process's pages that are on disk and free any page frames the
+		 * process is using.
+		 */
 
-    /* Clean up the page table. */
+		/* Clean up the page table. */
 
-    free((char *) processes[pid].pageTable);
-    processes[pid].numPages = 0;
-    processes[pid].pageTable = NULL;
+		free((char *) processes[pid].pageTable);
+		processes[pid].numPages = 0;
+		processes[pid].pageTable = NULL;
+	}
 }
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -58,46 +54,48 @@ P3_Quit(pid)
  *
  *----------------------------------------------------------------------
  */
-void
-P3_Switch(old, new)
-    int		old;	/* Old (current) process */
-    int		new;	/* New process */
+void P3_Switch(old, new)
+	int old; /* Old (current) process */
+	int new; /* New process */
 {
-    int		page;
-    int		status;
+	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
+		int page;
+		int status;
 
-    CheckMode();
-    CheckPid(old);
-    CheckPid(new);
+		CheckMode();
+		CheckPid(old);
+		CheckPid(new);
 
-    P3_vmStats.switches++;
-    for (page = 0; page < processes[old].numPages; page++) {
-	/*
-	 * If a page of the old process is in memory then a mapping
-	 * for it must be in the MMU. Remove it.
-	 */
-	if (processes[old].pageTable[page].state == INCORE) {
-	    assert(processes[old].pageTable[page].frame != -1);
-	    status = USLOSS_MmuUnmap(TAG, page);
-	    if (status != USLOSS_MMU_OK) {
-		  // report error and abort
-	    }
+		P3_vmStats.switches++;
+		for (page = 0; page < processes[old].numPages; page++) {
+			/*
+			 * If a page of the old process is in memory then a mapping
+			 * for it must be in the MMU. Remove it.
+			 */
+			if (processes[old].pageTable[page].state == INCORE) {
+				assert(processes[old].pageTable[page].frame != -1);
+				status = USLOSS_MmuUnmap(TAG, page);
+				if (status != USLOSS_MMU_OK) {
+					// report error and abort
+				}
+			}
+		}
+		for (page = 0; page < processes[new].numPages; page++) {
+			/*
+			 * If a page of the new process is in memory then add a mapping
+			 * for it to the MMU.
+			 */
+			if (processes[new].pageTable[page].state == INCORE) {
+				assert(processes[new].pageTable[page].frame != -1);
+				status = USLOSS_MmuMap(TAG, page,
+						processes[new].pageTable[page].frame,
+						USLOSS_MMU_PROT_RW);
+				if (status != USLOSS_MMU_OK) {
+					// report error and abort
+				}
+			}
+		}
 	}
-    }
-    for (page = 0; page < processes[new].numPages; page++) {
-	/*
-	 * If a page of the new process is in memory then add a mapping
-	 * for it to the MMU.
-	 */
-	if (processes[new].pageTable[page].state == INCORE) {
-	    assert(processes[new].pageTable[page].frame != -1);
-	    status = USLOSS_MmuMap(TAG, page, processes[new].pageTable[page].frame,
-			USLOSS_MMU_PROT_RW);
-	    if (status != USLOSS_MMU_OK) {
-		  // report error and abort
-	    }
-	}
-    }
 }
 
 /*
@@ -115,33 +113,32 @@ P3_Switch(old, new)
  *
  *----------------------------------------------------------------------
  */
-void
-FaultHandler(type, arg)
-    int		type;	/* USLOSS_MMU_INT */
-    void	*arg;	/* Address that caused the fault */
+void FaultHandler(type, arg)
+	int type; /* USLOSS_MMU_INT */
+	void *arg; /* Address that caused the fault */
 {
-    int		cause;
-    int		status;
-    Fault	fault;
-    int     size;
+	int cause;
+	int status;
+	Fault fault;
+	int size;
 
-    assert(type == USLOSS_MMU_INT);
-    cause = USLOSS_MmuGetCause();
-    assert(cause == USLOSS_MMU_FAULT);
-    P3_vmStats.faults++;
-    fault.pid = P1_GetPID();
-    fault.addr = arg;
-    fault.mbox = P2_MboxCreate(1, 0);
-    assert(fault.mbox >= 0);
-    size = sizeof(fault);
-    status = P2_MboxSend(pagerMbox, &fault, &size);
-    assert(status == 0);
-    assert(size == sizeof(fault));
-    size = 0;
-    status = P2_MboxReceive(fault.mbox, NULL, &size);
-    assert(status == 0);
-    status = P2_MboxRelease(fault.mbox);
-    assert(status == 0);
+	assert(type == USLOSS_MMU_INT);
+	cause = USLOSS_MmuGetCause();
+	assert(cause == USLOSS_MMU_FAULT);
+	P3_vmStats.faults++;
+	fault.pid = P1_GetPID();
+	fault.addr = arg;
+	fault.mbox = P2_MboxCreate(1, 0);
+	assert(fault.mbox >= 0);
+	size = sizeof(fault);
+	status = P2_MboxSend(pagerMbox, &fault, &size);
+	assert(status == 0);
+	assert(size == sizeof(fault));
+	size = 0;
+	status = P2_MboxReceive(fault.mbox, NULL, &size);
+	assert(status == 0);
+	status = P2_MboxRelease(fault.mbox);
+	assert(status == 0);
 }
 
 /*
@@ -160,16 +157,14 @@ FaultHandler(type, arg)
  *
  *----------------------------------------------------------------------
  */
-int
-Pager(void)
-{
-    while(1) {
-    	/* Wait for fault to occur (receive from pagerMbox) */
-    	/* Find a free frame */
-    	/* If there isn't one run clock algorithm, write page to disk if necessary */
-    	/* Load page into frame from disk or fill with zeros */
-    	/* Unblock waiting (faulting) process */
-    }
-    /* Never gets here. */
-    return 1;
+int Pager(void) {
+	while (1) {
+		/* Wait for fault to occur (receive from pagerMbox) */
+		/* Find a free frame */
+		/* If there isn't one run clock algorithm, write page to disk if necessary */
+		/* Load page into frame from disk or fill with zeros */
+		/* Unblock waiting (faulting) process */
+	}
+	/* Never gets here. */
+	return 1;
 }
