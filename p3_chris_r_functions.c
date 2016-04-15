@@ -160,10 +160,29 @@ void FaultHandler(type, arg)
 int Pager(void) {
 	while (1) {
 		/* Wait for fault to occur (receive from pagerMbox) */
+		Fault fault;
+		int size = sizeof(Fault);
+		P2_MboxReceive(pagerMbox, (void *)&fault, &size);
+
 		/* Find a free frame */
+		int freeFrameFound = FALSE;
+		int i;
+		for(i=0; i< P1_MAXPROC; i++){
+			if(processes[fault.pid].pageTable[i].state == UNUSED){
+				freeFrameFound = TRUE;
+				break;
+			}
+		}
+
+
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
+		if(freeFrameFound != TRUE){
+			//run clock algorithm
+		}
+
 		/* Load page into frame from disk or fill with zeros */
 		/* Unblock waiting (faulting) process */
+		P2_MboxCondSend(fault.mbox,NULL,&size);
 	}
 	/* Never gets here. */
 	return 1;
