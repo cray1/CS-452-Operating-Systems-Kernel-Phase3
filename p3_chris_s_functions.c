@@ -1,7 +1,7 @@
 /* So that we don't conflict by both writing to phase2.c, write your functions here. Obviously include tests in the test folder however!  */
 #include "p3_globals.h"
 
-int *pagers_pid, num_pagers;
+int *pagers_pids, num_pagers;
 
 
 int Pager_Wrapper(void *arg);
@@ -31,16 +31,18 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	
 	if(pagers > P3_MAX_PAGERS){
 		// too many pagers
-		num_pagers = P3_MAX_PAGERS;
+		USLOSS_Trace("Too many pagers");
+		USLOSS_Halt(1);
 	}else{
 		num_pagers = pagers;
 	}
-	pagers_pid = malloc(sizeof(int)*pagers);
+	pagers_pids = malloc(sizeof(int)*pagers);
 	
-	/*if(mappings > USLOSS_MMU_NUM_TAGS * pages){
+	if(mappings > USLOSS_MMU_NUM_TAG * pages){		
+		USLOSS_Trace("Too many pagers");
+		USLOSS_Halt(1);
 		// mappings too big
-		mappings = USLOSS_MMU_NUM_TAGS * pages;
-	}*/
+	}
 	
 	status = USLOSS_MmuInit(mappings, pages, frames);
 	if (status != USLOSS_MMU_OK) {
@@ -63,7 +65,9 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 
 	pagerMbox = P2_MboxCreate(P1_MAXPROC, sizeof(Fault));//added by cray1
 	for(i = 0; i<pagers; i++){
-		pagers_pid[i] = P1_Fork("Pager", Pager_Wrapper, NULL, USLOSS_MIN_STACK, 2);
+		char name[10];
+		sprintf(name, "Pager_%d", i);
+		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK, 2);
 	}
 
 
@@ -104,7 +108,7 @@ void P3_VmDestroy(void) {
 	 */
 	int i;
 	for(i = 0; i < num_pagers; i++){
-		P1_Kill(pagers_pid[i]);
+		P1_Kill(pagers_pids[i]);
 	} 
 	/*
 	 * Print vm statistics.
