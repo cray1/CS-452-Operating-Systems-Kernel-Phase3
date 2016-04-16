@@ -98,4 +98,48 @@ CheckMode(void)
     }
 }
 
+void DebugPrint(char *str){
+	USLOSS_Console(str);
+}
+
+void Print_MMU_Error_Code(int error){
+	switch (error) {
+		case USLOSS_MMU_OK:
+			DebugPrint("MMU_Error_Code: No error\n");
+			break;
+		case USLOSS_MMU_ERR_OFF:
+			DebugPrint("MMU_Error_Code: MMU has not been initialized\n");
+			break;
+		case USLOSS_MMU_ERR_ON:
+			DebugPrint("MMU_Error_Code: MMU has already been initialized\n");
+			break;
+		case USLOSS_MMU_ERR_PAGE:
+			DebugPrint("MMU_Error_Code: Invalid page number\n");
+			break;
+		case USLOSS_MMU_ERR_FRAME:
+			DebugPrint("MMU_Error_Code: Invalid frame number\n");
+			break;
+		case USLOSS_MMU_ERR_PROT:
+			DebugPrint("MMU_Error_Code: Invalid protection\n");
+			break;
+		case USLOSS_MMU_ERR_TAG:
+			DebugPrint("MMU_Error_Code: Invalid tag\n");
+			break;
+		case USLOSS_MMU_ERR_REMAP:
+			DebugPrint("MMU_Error_Code: Mapping with same tag and page already exists\n");
+			break;
+		case USLOSS_MMU_ERR_NOMAP:
+			DebugPrint("MMU_Error_Code: Mapping not found\n");
+			break;
+		case USLOSS_MMU_ERR_ACC:
+			DebugPrint("MMU_Error_Code: Invalid access bits\n");
+			break;
+		case USLOSS_MMU_ERR_MAPS:
+			DebugPrint("MMU_Error_Code: Too many mappings\n");
+			break;
+		default:
+			break;
+	}
+}
+
 

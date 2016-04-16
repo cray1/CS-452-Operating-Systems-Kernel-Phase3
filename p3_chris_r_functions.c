@@ -180,7 +180,23 @@ int Pager(void) {
 			//run clock algorithm
 		}
 
-		/* Load page into frame from disk or fill with zeros */
+		if(freeFrameFound == TRUE){
+			/*To handle a page fault a pager must first allocate a frame to hold the page. First, it checks a free list of frames.
+			 * If a free frame is found the page table entry for the faulted process is updated to refer to the free frame
+			 * */
+			processes[fault.pid].pageTable[i].state = INCORE;
+			processes[fault.pid].pageTable[i].frame = i; //TODO: 1:1 mapping may not hold true
+			int errorCode = USLOSS_MmuMap(fault.pid, i, i,USLOSS_MMU_PROT_RW);
+			if(errorCode == USLOSS_MMU_OK){
+
+			}
+			else{
+				Print_MMU_Error_Code(errorCode);
+			}
+		}
+
+		/* Load page into frame from disk or fill with zeros */ //PHASE B
+
 		/* Unblock waiting (faulting) process */
 		P2_MboxCondSend(fault.mbox,NULL,&size);
 	}

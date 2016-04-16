@@ -99,6 +99,7 @@ void switchToUserMode();
 void CheckPid(int);
 void CheckMode(void);
 
+void Print_MMU_Error_Code(int error);
 
 
 
