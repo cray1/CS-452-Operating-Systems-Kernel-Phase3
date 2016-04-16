@@ -39,7 +39,7 @@ typedef struct PTE {
     /* Add more stuff here */
 } PTE;
 
-/*
+/*rr
  * Per-process information
  */
 typedef struct Process {

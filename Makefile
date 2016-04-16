@@ -25,7 +25,7 @@ endif
 USLOSS_VERSION = 2.12
 
 # Set to version of Phase 1 you want to use.
-PHASE1_VERSION = 1.5
+PHASE1_VERSION = 1.6
 
 # Set to version of Phase 2 you want to use.
 PHASE2_VERSION = 2.0

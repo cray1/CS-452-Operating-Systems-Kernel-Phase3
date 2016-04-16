@@ -1,6 +1,11 @@
 /* So that we don't conflict by both writing to phase2.c, write your functions here. Obviously include tests in the test folder however!  */
 #include "p3_globals.h"
 
+int *pagers_pid, num_pagers;
+
+
+int Pager_Wrapper(void *arg);
+
 /*
  *----------------------------------------------------------------------
  *
@@ -21,8 +26,22 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	int status;
 	int i;
 	int tmp;
-
+	
 	CheckMode();
+	
+	if(pagers > P3_MAX_PAGERS){
+		// too many pagers
+		num_pagers = P3_MAX_PAGERS;
+	}else{
+		num_pagers = pagers;
+	}
+	pagers_pid = malloc(sizeof(int)*pagers);
+	
+	/*if(mappings > USLOSS_MMU_NUM_TAGS * pages){
+		// mappings too big
+		mappings = USLOSS_MMU_NUM_TAGS * pages;
+	}*/
+	
 	status = USLOSS_MmuInit(mappings, pages, frames);
 	if (status != USLOSS_MMU_OK) {
 		USLOSS_Console("P3_VmInit: couldn't initialize MMU, status %d\n",
@@ -37,12 +56,16 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 		processes[i].numPages = 0;
 		processes[i].pageTable = NULL;
 	}
+	
 	/*
 	 * Create the page fault mailbox and fork the pagers here.
 	 */
 
-
 	pagerMbox = P2_MboxCreate(P1_MAXPROC, sizeof(Fault));//added by cray1
+	for(i = 0; i<pagers; i++){
+		pagers_pid[i] = P1_Fork("Pager", Pager_Wrapper, NULL, USLOSS_MIN_STACK, 2);
+	}
+
 
 	memset((char *) &P3_vmStats, 0, sizeof(P3_VmStats));
 	P3_vmStats.pages = pages;
@@ -52,6 +75,10 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 
 	IsVmInitialized = TRUE; //added by cray1
 	return numPages * USLOSS_MmuPageSize();
+}
+
+int Pager_Wrapper(void *arg){
+	return Pager();
 }
 
 /*
@@ -75,6 +102,10 @@ void P3_VmDestroy(void) {
 	/*
 	 * Kill the pagers here.
 	 */
+	int i;
+	for(i = 0; i < num_pagers; i++){
+		P1_Kill(pagers_pid[i]);
+	} 
 	/*
 	 * Print vm statistics.
 	 */
