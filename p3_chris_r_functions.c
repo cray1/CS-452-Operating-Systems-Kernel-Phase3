@@ -131,6 +131,8 @@ void FaultHandler(type, arg)
 	if (enableVerboseDebug == TRUE)
 		USLOSS_Console("FaultHandler called, current PID: %d\n", P1_GetPID());
 
+
+	if(num_pagers  >0){
 	int cause = 0;
 	int status =0;
 	Fault fault;
@@ -156,6 +158,11 @@ void FaultHandler(type, arg)
 	assert(status == 0);
 	status = P2_MboxRelease(fault.mbox);
 	assert(status == 0);
+	}
+	else{
+		if (enableVerboseDebug == TRUE)
+				USLOSS_Console("FaultHandler: number of pagers is %d therefore, doing nothing , current PID: %d\n",num_pagers , P1_GetPID());
+	}
 }
 
 /*

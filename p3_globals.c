@@ -6,6 +6,8 @@
 Process	processes[P1_MAXPROC];
 int	numPages = 0;
 int	numFrames = 0;
+int *pagers_pids;
+int num_pagers = 0;
 
 
 
