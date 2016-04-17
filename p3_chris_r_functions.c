@@ -148,14 +148,21 @@ int Pager(void) {
 			/*To handle a page fault a pager must first allocate a frame to hold the page. First, it checks a free list of frames.
 			 * If a free frame is found the page table entry for the faulted process is updated to refer to the free frame
 			 * */
+
+			DebugPrint("Pager: found free frame %d, current PID: %d!\n", i, P1_GetPID());
 			processes[fault.pid].pageTable[i].state = INCORE;
 			processes[fault.pid].pageTable[i].frame = i; //TODO: 1:1 mapping may not hold true
+
+			DebugPrint("Pager: mapping frame %d to page %d, current PID: %d!\n", i,i, P1_GetPID());
 			int errorCode = USLOSS_MmuMap(TAG, i, i, USLOSS_MMU_PROT_RW);
+			DebugPrint("Pager: done mapping frame %d to page %d, current PID: %d!\n", i,i, P1_GetPID());
 			if (errorCode == USLOSS_MMU_OK) {
 				char *segment;
 				int pages;
 				/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
+				DebugPrint("Pager: filling with zeroes , current PID: %d!\n",  P1_GetPID());
 				memset(fault.addr,0,USLOSS_MmuPageSize());
+				DebugPrint("Pager: done filling with zeroes , current PID: %d!\n",  P1_GetPID());
 			} else {
 				// report error and abort
 				Print_MMU_Error_Code(errorCode);
@@ -165,7 +172,9 @@ int Pager(void) {
 				P1_DumpProcesses();
 				USLOSS_Halt(1);
 			}
+			DebugPrint("Pager: unmapping page %d , current PID: %d!\n", i, P1_GetPID());
 			errorCode = USLOSS_MmuUnmap(TAG,i);
+			DebugPrint("Pager: done unmapping page %d , current PID: %d!\n", i, P1_GetPID());
 		}
 
 		/* Unblock waiting (faulting) process */
