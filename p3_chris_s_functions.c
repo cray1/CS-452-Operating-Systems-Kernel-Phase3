@@ -27,6 +27,8 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	int i;
 	int tmp;
 	
+
+	USLOSS_Console("P3_VmInit called, current PID: %d\n", P1_GetPID());
 	CheckMode();
 	
 	if(pagers > P3_MAX_PAGERS){
@@ -101,6 +103,8 @@ int Pager_Wrapper(void *arg){
  *----------------------------------------------------------------------
  */
 void P3_VmDestroy(void) {
+
+	USLOSS_Console("P3_VmDestroy called, current PID: %d\n", P1_GetPID());
 	CheckMode();
 	USLOSS_MmuDone();
 	/*
@@ -138,6 +142,8 @@ void P3_VmDestroy(void) {
 void P3_Fork(pid)
 	int pid; /* New process */
 {
+
+	USLOSS_Console("P3_Fork called, current PID: %d\n", P1_GetPID());
 
 	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
 		int i;

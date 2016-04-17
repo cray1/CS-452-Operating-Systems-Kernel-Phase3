@@ -79,6 +79,7 @@ extern int IsVmInitialized;
 /* You'll probably want more states */
 
 
+void DebugPrint(char *str);
 /**
  * Checks for Kernel Mode
  */

@@ -19,6 +19,8 @@
  */
 void P3_Quit(pid)
 	int pid; {
+
+	USLOSS_Console("P3_Quit called, current PID: %d\n", P1_GetPID());
 	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
 		CheckMode();
 		CheckPid(pid);
@@ -58,6 +60,7 @@ void P3_Switch(old, new)
 	int old; /* Old (current) process */
 	int new; /* New process */
 {
+		USLOSS_Console("P3_Switch called, current PID: %d\n", P1_GetPID());
 	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
 		int page;
 		int status;
@@ -117,6 +120,7 @@ void FaultHandler(type, arg)
 	int type; /* USLOSS_MMU_INT */
 	void *arg; /* Address that caused the fault */
 {
+		USLOSS_Console("FaultHandler called, current PID: %d\n", P1_GetPID() );
 	int cause;
 	int status;
 	Fault fault;
@@ -158,6 +162,7 @@ void FaultHandler(type, arg)
  *----------------------------------------------------------------------
  */
 int Pager(void) {
+	USLOSS_Console("Pager called, current PID: %d!\n", P1_GetPID());
 	while (1) {
 		/* Wait for fault to occur (receive from pagerMbox) */
 		Fault fault;
