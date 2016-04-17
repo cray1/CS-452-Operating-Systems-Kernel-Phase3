@@ -186,7 +186,7 @@ int Pager(void) {
 			 * */
 			processes[fault.pid].pageTable[i].state = INCORE;
 			processes[fault.pid].pageTable[i].frame = i; //TODO: 1:1 mapping may not hold true
-			int errorCode = USLOSS_MmuMap(fault.pid, i, i,USLOSS_MMU_PROT_RW);
+			int errorCode = USLOSS_MmuMap(TAG, i, i,USLOSS_MMU_PROT_RW);
 			if(errorCode == USLOSS_MMU_OK){
 
 			}
@@ -199,11 +199,10 @@ int Pager(void) {
 			}
 		}
 
-		void *segment; int pages;
+		char *segment; int pages;
 		/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
 		segment = USLOSS_MmuRegion(&pages);
-		*segment = *fault.addr;
-
+		*segment = '0';
 		/* Unblock waiting (faulting) process */
 		P2_MboxCondSend(fault.mbox,NULL,&size);
 	}
