@@ -20,7 +20,7 @@ void starter_p3_quit(int pid) {
 
 void starter_FaultHandler(int type, void *arg) {
 	int cause;
-	int status;
+	int status = 0;
 	Fault fault;
 	int size;
 
@@ -34,6 +34,7 @@ void starter_FaultHandler(int type, void *arg) {
 	assert(fault.mbox >= 0);
 	size = sizeof(fault);
 	status = P2_MboxSend(pagerMbox, &fault, &size);
+	USLOSS_Console("Status: %d\n", status);
 	assert(status >= 0);
 	assert(size == sizeof(fault));
 	size = 0;
@@ -55,10 +56,23 @@ int starter_Pager(void) {
 	return 1;
 }
 
+/**
+ * Test step 1: Sys_VMInit initializes the MMU with an equal
+ * number of pages and frames, loads some simple mappings that
+ * map page 0 to frame 0, and spawns a child that accesses the VM region.
+ */
 int starter_P3_VmInit(int mappings, int pages, int frames, int pagers) {
+
+
 	int status;
 	int i;
 	int tmp;
+
+
+	//equal number of pages and frames
+	frames = pages;
+
+
 
 	CheckMode();
 	status = USLOSS_MmuInit(mappings, pages, frames);
@@ -84,7 +98,15 @@ int starter_P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	P3_vmStats.frames = frames;
 	numPages = pages;
 	numFrames = frames;
-	return numPages * USLOSS_MmuPageSize();
+
+	// Map page 0 to frame 0
+	status = USLOSS_MmuMap(0, 0, 0, USLOSS_MMU_PROT_RW);
+	Print_MMU_Error_Code(status);
+	assert(status == 0);
+
+
+	return 0;
+	//return numPages * USLOSS_MmuPageSize();
 }
 
 void starter_P3_VmDestroy(void) {
