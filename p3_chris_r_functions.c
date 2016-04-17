@@ -20,8 +20,11 @@
 void P3_Quit(pid)
 	int pid; {
 
-	USLOSS_Console("P3_Quit called, current PID: %d\n", P1_GetPID());
+
+
 	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
+		if (enableVerboseDebug == TRUE)
+			USLOSS_Console("P3_Quit called, current PID: %d\n", P1_GetPID());
 		CheckMode();
 		CheckPid(pid);
 		assert(processes[pid].numPages > 0);
@@ -60,8 +63,13 @@ void P3_Switch(old, new)
 	int old; /* Old (current) process */
 	int new; /* New process */
 {
-		USLOSS_Console("P3_Switch called, current PID: %d\n", P1_GetPID());
+
+
 	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
+
+		if (enableVerboseDebug == TRUE)
+				USLOSS_Console("P3_Switch called, current PID: %d\n", P1_GetPID());
+
 		int page;
 		int status;
 
@@ -120,7 +128,9 @@ void FaultHandler(type, arg)
 	int type; /* USLOSS_MMU_INT */
 	void *arg; /* Address that caused the fault */
 {
-		USLOSS_Console("FaultHandler called, current PID: %d\n", P1_GetPID() );
+	if (enableVerboseDebug == TRUE)
+		USLOSS_Console("FaultHandler called, current PID: %d\n", P1_GetPID());
+
 	int cause;
 	int status;
 	Fault fault;
@@ -162,54 +172,57 @@ void FaultHandler(type, arg)
  *----------------------------------------------------------------------
  */
 int Pager(void) {
-	USLOSS_Console("Pager called, current PID: %d!\n", P1_GetPID());
+	if (enableVerboseDebug == TRUE)
+		USLOSS_Console("Pager called, current PID: %d!\n", P1_GetPID());
+
 	while (1) {
 		/* Wait for fault to occur (receive from pagerMbox) */
 		Fault fault;
 		int size = sizeof(Fault);
-		P2_MboxReceive(pagerMbox, (void *)&fault, &size);
+		P2_MboxReceive(pagerMbox, (void *) &fault, &size);
 
 		/* Find a free frame */
 		int freeFrameFound = FALSE;
 		int i;
-		for(i=0; i< P1_MAXPROC; i++){
-			if(processes[fault.pid].pageTable[i].state == UNUSED){
+		for (i = 0; i < P1_MAXPROC; i++) {
+			if (processes[fault.pid].pageTable[i].state == UNUSED) {
 				freeFrameFound = TRUE;
 				break;
 			}
 		}
 
-
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
-		if(freeFrameFound != TRUE){
+		if (freeFrameFound != TRUE) {
 			//run clock algorithm //Part B
 		}
 
-		if(freeFrameFound == TRUE){
+		if (freeFrameFound == TRUE) {
 			/*To handle a page fault a pager must first allocate a frame to hold the page. First, it checks a free list of frames.
 			 * If a free frame is found the page table entry for the faulted process is updated to refer to the free frame
 			 * */
 			processes[fault.pid].pageTable[i].state = INCORE;
 			processes[fault.pid].pageTable[i].frame = i; //TODO: 1:1 mapping may not hold true
-			int errorCode = USLOSS_MmuMap(TAG, i, i,USLOSS_MMU_PROT_RW);
-			if(errorCode == USLOSS_MMU_OK){
+			int errorCode = USLOSS_MmuMap(TAG, i, i, USLOSS_MMU_PROT_RW);
+			if (errorCode == USLOSS_MMU_OK) {
 
-			}
-			else{
+			} else {
 				// report error and abort
 				Print_MMU_Error_Code(errorCode);
-				USLOSS_Trace("Pager with pid %d received an MMU error! Halting!\n", P1_GetPID());
+				USLOSS_Trace(
+						"Pager with pid %d received an MMU error! Halting!\n",
+						P1_GetPID());
 				P1_DumpProcesses();
 				USLOSS_Halt(1);
 			}
 		}
 
-		char *segment; int pages;
+		char *segment;
+		int pages;
 		/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
 		segment = USLOSS_MmuRegion(&pages);
 		*segment = '0';
 		/* Unblock waiting (faulting) process */
-		P2_MboxCondSend(fault.mbox,NULL,&size);
+		P2_MboxCondSend(fault.mbox, NULL, &size);
 	}
 	/* Never gets here. */
 	return 1;
