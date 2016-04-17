@@ -50,7 +50,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	if (status != USLOSS_MMU_OK) {
 		USLOSS_Console("P3_VmInit: couldn't initialize MMU, status %d\n",
 				status);
-		//USLOSS_Halt(1);
+		USLOSS_Halt(1);
 	}
 	vmRegion = USLOSS_MmuRegion(&tmp);
 	assert(vmRegion != NULL);
