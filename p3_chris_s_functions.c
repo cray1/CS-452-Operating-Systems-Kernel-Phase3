@@ -70,6 +70,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 		char name[10];
 		sprintf(name, "Pager_%d", i);
 		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK, 2);
+		USLOSS_Console("P3_VmInit:  forked pager with pid %d\n", pagers_pids[i]);
 	}
 
 
