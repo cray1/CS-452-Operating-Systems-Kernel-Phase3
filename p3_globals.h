@@ -81,7 +81,7 @@ extern int IsVmInitialized;
 /* You'll probably want more states */
 
 
-void DebugPrint(char *fmt, ...)
+void DebugPrint(char *fmt, ...);
 /**
  * Checks for Kernel Mode
  */
