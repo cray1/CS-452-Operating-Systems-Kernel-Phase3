@@ -27,8 +27,8 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	int i;
 	int tmp;
 	
-
-	USLOSS_Console("P3_VmInit called, current PID: %d\n", P1_GetPID());
+	if (enableVerboseDebug == TRUE) 
+		USLOSS_Console("P3_VmInit called, current PID: %d\n", P1_GetPID());
 	CheckMode();
 	
 	if(pagers > P3_MAX_PAGERS){
@@ -66,13 +66,6 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	 */
 
 	pagerMbox = P2_MboxCreate(P1_MAXPROC, sizeof(Fault));//added by cray1
-	for(i = 0; i<pagers; i++){
-		char name[10];
-		sprintf(name, "Pager_%d", i);
-		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK, 2);
-		USLOSS_Console("P3_VmInit:  forked pager with pid %d\n", pagers_pids[i]);
-	}
-
 
 	memset((char *) &P3_vmStats, 0, sizeof(P3_VmStats));
 	P3_vmStats.pages = pages;
@@ -81,6 +74,18 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	numFrames = frames;
 
 	IsVmInitialized = TRUE; //added by cray1
+	if (enableVerboseDebug == TRUE) 
+		USLOSS_Console("pagers: %d\n",num_pagers);
+	
+	for(i = 0; i<num_pagers; i++){
+		char name[10];
+		sprintf(name, "Pager_%d", i);
+		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK, 2);
+		if (enableVerboseDebug == TRUE) 
+			USLOSS_Console("P3_VmInit:  forked pager with pid %d\n", pagers_pids[i]);
+	}
+	if (enableVerboseDebug == TRUE) 
+		P1_DumpProcesses();
 	return 0;
 }
 
