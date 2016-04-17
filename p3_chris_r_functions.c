@@ -199,7 +199,10 @@ int Pager(void) {
 			}
 		}
 
+		void *segment; int pages;
 		/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
+		segment = USLOSS_MmuRegion(&pages);
+		*segment = *fault.addr;
 
 		/* Unblock waiting (faulting) process */
 		P2_MboxCondSend(fault.mbox,NULL,&size);
