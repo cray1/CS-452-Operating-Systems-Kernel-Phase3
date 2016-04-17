@@ -163,7 +163,7 @@ int Pager(void) {
 				/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
 				segment = USLOSS_MmuRegion(&pages);
 				memset(fault.addr, '\0',sizeof(char));
-				*segment = '0';
+				*segment = '\0';
 			} else {
 				// report error and abort
 				Print_MMU_Error_Code(errorCode);
