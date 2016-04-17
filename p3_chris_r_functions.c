@@ -131,10 +131,10 @@ void FaultHandler(type, arg)
 	if (enableVerboseDebug == TRUE)
 		USLOSS_Console("FaultHandler called, current PID: %d\n", P1_GetPID());
 
-	int cause;
-	int status;
+	int cause = 0;
+	int status =0;
 	Fault fault;
-	int size;
+	int size = 0;
 
 	assert(type == USLOSS_MMU_INT);
 	cause = USLOSS_MmuGetCause();
@@ -146,7 +146,10 @@ void FaultHandler(type, arg)
 	assert(fault.mbox >= 0);
 	size = sizeof(fault);
 	status = P2_MboxSend(pagerMbox, &fault, &size);
-	assert(status == 0);
+	if (enableVerboseDebug == TRUE)
+			USLOSS_Console("FaultHandler: status: %d, current PID: %d\n", status, P1_GetPID());
+
+	//assert(status == 0);
 	assert(size == sizeof(fault));
 	size = 0;
 	status = P2_MboxReceive(fault.mbox, NULL, &size);
