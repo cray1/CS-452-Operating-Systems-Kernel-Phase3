@@ -100,8 +100,12 @@ CheckMode(void)
     }
 }
 
-void DebugPrint(char *str){
-	USLOSS_Console(str);
+void DebugPrint(char *fmt, ...){
+	if(enableVerboseDebug == TRUE){
+		va_list ap;
+		va_start(ap, fmt);
+		USLOSS_VConsole(fmt, ap);
+	}
 }
 
 void Print_MMU_Error_Code(int error){
