@@ -67,8 +67,8 @@ void P3_Switch(old, new)
 
 	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
 
-		if (enableVerboseDebug == TRUE)
-				USLOSS_Console("P3_Switch called, current PID: %d\n", P1_GetPID());
+		//if (enableVerboseDebug == TRUE)
+		//		USLOSS_Console("P3_Switch called, current PID: %d\n", P1_GetPID());
 
 		int page;
 		int status;
@@ -182,7 +182,13 @@ int Pager(void) {
 		/* Wait for fault to occur (receive from pagerMbox) */
 		Fault fault;
 		int size = sizeof(Fault);
+
+		if (enableVerboseDebug == TRUE)
+			USLOSS_Console("Pager waiting to receive on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 		P2_MboxReceive(pagerMbox, (void *) &fault, &size);
+
+		if (enableVerboseDebug == TRUE)
+			USLOSS_Console("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
 		/* Find a free frame */
 		int freeFrameFound = FALSE;
