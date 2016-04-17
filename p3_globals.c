@@ -148,4 +148,17 @@ void Print_MMU_Error_Code(int error){
 	}
 }
 
+char *get_MMU_Frame_Address(int pageNum){
+	int pageSize = USLOSS_MmuPageSize();
+	int numPages;
+	char *addr = USLOSS_MmuRegion(&numPages);
+	return addr + pageNum * pageSize;
+}
+
+void set_MMU_Frame_contents(int pageNum,  volatile char *str){
+	char *frameAddr = get_MMU_Frame_Address(pageNum);
+	*frameAddr = *str;
+
+}
+
 

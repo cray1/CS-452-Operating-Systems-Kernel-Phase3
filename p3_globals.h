@@ -103,6 +103,8 @@ void CheckPid(int);
 void CheckMode(void);
 
 void Print_MMU_Error_Code(int error);
+char *get_MMU_Frame_Address(int pageNum);
+void set_MMU_Frame_contents(int pageNum,  volatile char *str);
 
 
 
