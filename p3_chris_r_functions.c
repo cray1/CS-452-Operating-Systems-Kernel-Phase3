@@ -117,23 +117,17 @@ void FaultHandler(type, arg)
  *----------------------------------------------------------------------
  */
 int Pager(void) {
-	if (enableVerboseDebug == TRUE)
-		USLOSS_Console("Pager called, current PID: %d!\n", P1_GetPID());
+	DebugPrint("Pager called, current PID: %d!\n", P1_GetPID());
 
 	while (1) {
 		/* Wait for fault to occur (receive from pagerMbox) */
 		Fault fault;
 		int size = sizeof(Fault);
 
-		if (enableVerboseDebug == TRUE)
-			USLOSS_Console(
-					"Pager waiting to receive on mbox: %d, current PID: %d!\n",
-					pagerMbox, P1_GetPID());
+		DebugPrint( "Pager waiting to receive on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 		P2_MboxReceive(pagerMbox, (void *) &fault, &size);
 
-		if (enableVerboseDebug == TRUE)
-			USLOSS_Console("Pager received on mbox: %d, current PID: %d!\n",
-					pagerMbox, P1_GetPID());
+		DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
 		/* Find a free frame */
 		int freeFrameFound = FALSE;
@@ -161,9 +155,7 @@ int Pager(void) {
 				char *segment;
 				int pages;
 				/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
-				segment = USLOSS_MmuRegion(&pages);
-				memset(fault.addr, '\0',sizeof(char));
-				*segment = '\0';
+				memset(fault.addr,0,USLOSS_MmuPageSize());
 			} else {
 				// report error and abort
 				Print_MMU_Error_Code(errorCode);
@@ -173,6 +165,7 @@ int Pager(void) {
 				P1_DumpProcesses();
 				USLOSS_Halt(1);
 			}
+			errorCode = USLOSS_MmuUnmap(TAG,i);
 		}
 
 		/* Unblock waiting (faulting) process */
