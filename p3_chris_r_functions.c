@@ -177,7 +177,7 @@ int Pager(void) {
 
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
 		if(freeFrameFound != TRUE){
-			//run clock algorithm
+			//run clock algorithm //Part B
 		}
 
 		if(freeFrameFound == TRUE){
@@ -191,11 +191,15 @@ int Pager(void) {
 
 			}
 			else{
+				// report error and abort
 				Print_MMU_Error_Code(errorCode);
+				USLOSS_Trace("Pager with pid %d received an MMU error! Halting!\n", P1_GetPID());
+				P1_DumpProcesses();
+				USLOSS_Halt(1);
 			}
 		}
 
-		/* Load page into frame from disk or fill with zeros */ //PHASE B
+		/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
 
 		/* Unblock waiting (faulting) process */
 		P2_MboxCondSend(fault.mbox,NULL,&size);
