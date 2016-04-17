@@ -34,7 +34,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	if(pagers > P3_MAX_PAGERS){
 		// too many pagers
 		USLOSS_Trace("Too many pagers");
-		USLOSS_Halt(1);
+		return -1;
 	}else{
 		num_pagers = pagers;
 	}
@@ -42,7 +42,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	
 	if(mappings > USLOSS_MMU_NUM_TAG * pages){		
 		USLOSS_Trace("Too many pagers");
-		USLOSS_Halt(1);
+		return -1;
 		// mappings too big
 	}
 	
@@ -50,7 +50,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	if (status != USLOSS_MMU_OK) {
 		USLOSS_Console("P3_VmInit: couldn't initialize MMU, status %d\n",
 				status);
-		USLOSS_Halt(1);
+		//USLOSS_Halt(1);
 	}
 	vmRegion = USLOSS_MmuRegion(&tmp);
 	assert(vmRegion != NULL);
@@ -80,7 +80,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	numFrames = frames;
 
 	IsVmInitialized = TRUE; //added by cray1
-	return numPages * USLOSS_MmuPageSize();
+	return 0;
 }
 
 int Pager_Wrapper(void *arg){
