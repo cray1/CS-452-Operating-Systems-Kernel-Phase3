@@ -1,9 +1,6 @@
 /* So that we don't conflict by both writing to phase2.c, write your functions here. Obviously include tests in the test folder however!  */
 #include "p3_globals.h"
 
-
-
-
 int Pager_Wrapper(void *arg);
 
 /*
@@ -26,26 +23,26 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	int status;
 	int i;
 	int tmp;
-	
-	if (enableVerboseDebug == TRUE) 
+
+	if (enableVerboseDebug == TRUE)
 		USLOSS_Console("P3_VmInit called, current PID: %d\n", P1_GetPID());
 	CheckMode();
-	
-	if(pagers > P3_MAX_PAGERS){
+
+	if (pagers > P3_MAX_PAGERS) {
 		// too many pagers
 		USLOSS_Trace("Too many pagers");
 		return -1;
-	}else{
+	} else {
 		num_pagers = pagers;
 	}
-	pagers_pids = malloc(sizeof(int)*pagers);
-	
-	if(mappings > USLOSS_MMU_NUM_TAG * pages){		
+	pagers_pids = malloc(sizeof(int) * pagers);
+
+	if (mappings > USLOSS_MMU_NUM_TAG * pages) {
 		USLOSS_Trace("Too many pagers");
 		return -1;
 		// mappings too big
 	}
-	
+
 	status = USLOSS_MmuInit(mappings, pages, frames);
 	if (status != USLOSS_MMU_OK) {
 		USLOSS_Console("P3_VmInit: couldn't initialize MMU, status %d\n",
@@ -60,12 +57,12 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 		processes[i].numPages = 0;
 		processes[i].pageTable = NULL;
 	}
-	
+
 	/*
 	 * Create the page fault mailbox and fork the pagers here.
 	 */
 
-	pagerMbox = P2_MboxCreate(P1_MAXPROC, sizeof(Fault));//added by cray1
+	pagerMbox = P2_MboxCreate(P1_MAXPROC, sizeof(Fault)); //added by cray1
 
 	memset((char *) &P3_vmStats, 0, sizeof(P3_VmStats));
 	P3_vmStats.pages = pages;
@@ -74,22 +71,23 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	numFrames = frames;
 
 	IsVmInitialized = TRUE; //added by cray1
-	if (enableVerboseDebug == TRUE) 
-		USLOSS_Console("pagers: %d\n",num_pagers);
-	
-	for(i = 0; i<num_pagers; i++){
+	if (enableVerboseDebug == TRUE)
+		USLOSS_Console("pagers: %d\n", num_pagers);
+
+	for (i = 0; i < num_pagers; i++) {
 		char name[10];
 		sprintf(name, "Pager_%d", i);
-		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK, 2);
-		if (enableVerboseDebug == TRUE) 
-			USLOSS_Console("P3_VmInit:  forked pager with pid %d\n", pagers_pids[i]);
+		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK,
+				2);
+		if (enableVerboseDebug == TRUE)
+			USLOSS_Console("P3_VmInit:  forked pager with pid %d\n",
+					pagers_pids[i]);
 	}
-	if (enableVerboseDebug == TRUE) 
-		P1_DumpProcesses();
+
 	return 0;
 }
 
-int Pager_Wrapper(void *arg){
+int Pager_Wrapper(void *arg) {
 	return Pager();
 }
 
@@ -117,9 +115,9 @@ void P3_VmDestroy(void) {
 	 * Kill the pagers here.
 	 */
 	int i;
-	for(i = 0; i < num_pagers; i++){
+	for (i = 0; i < num_pagers; i++) {
 		P1_Kill(pagers_pids[i]);
-	} 
+	}
 	/*
 	 * Print vm statistics.
 	 */
@@ -128,6 +126,71 @@ void P3_VmDestroy(void) {
 	USLOSS_Console("frames: %d\n", P3_vmStats.frames);
 	USLOSS_Console("blocks: %d\n", P3_vmStats.blocks);
 	/* and so on... */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * P3_Switch
+ *
+ *	Called during a context switch. Unloads the mappings for the old
+ *	process and loads the mappings for the new.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The contents of the MMU are changed.
+ *
+ *----------------------------------------------------------------------
+ */
+void P3_Switch(old, new)
+	int old; /* Old (current) process */
+	int new; /* New process */
+{
+
+	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
+
+		//if (enableVerboseDebug == TRUE)
+		//		USLOSS_Console("P3_Switch called, current PID: %d\n", P1_GetPID());
+
+		int page;
+		int status;
+
+		CheckMode();
+		CheckPid(old);
+		CheckPid(new);
+
+		P3_vmStats.switches++;
+		for (page = 0; page < processes[old].numPages; page++) {
+			/*
+			 * If a page of the old process is in memory then a mapping
+			 * for it must be in the MMU. Remove it.
+			 */
+			if (processes[old].pageTable[page].state == INCORE) {
+				assert(processes[old].pageTable[page].frame != -1);
+				status = USLOSS_MmuUnmap(TAG, page);
+				if (status != USLOSS_MMU_OK) {
+					// report error and abort
+				}
+			}
+		}
+		for (page = 0; page < processes[new].numPages; page++) {
+			/*
+			 * If a page of the new process is in memory then add a mapping
+			 * for it to the MMU.
+			 */
+			if (processes[new].pageTable[page].state == INCORE) {
+				assert(processes[new].pageTable[page].frame != -1);
+				status = USLOSS_MmuMap(TAG, page,
+						processes[new].pageTable[page].frame,
+						USLOSS_MMU_PROT_RW);
+				if (status != USLOSS_MMU_OK) {
+					// report error and abort
+				}
+			}
+		}
+	}
 }
 
 /*
