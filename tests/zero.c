@@ -53,25 +53,37 @@ static int Child(void *arg) {
 	char *page;
 
 	USLOSS_Console("Child \"%s\" starting.\n", name);
+	DebugPrint("----------------------------1\n");
 	for (i = 0; i < ITERATIONS; i++) {
+		DebugPrint("----------------------------2\n");
 		for (j = 0; j < PAGES; j++) {
+			DebugPrint("----------------------------3\n");
 			page = (char *) (vmRegion_a + j * pageSize);
+			DebugPrint("----------------------------4\n");
 			for (k = 0; k < pageSize; k++) {
 
-				/*
-				if (page[k] == '\0')
+				DebugPrint("----------------------------5\n");
+				if (page[k] == '\0'){
+					DebugPrint("----------------------------6\n");
 					DebugPrint(
 							"Zero.c: child %s: Passed Assertion assert(page[k] == '\\0');\n", name);
+					DebugPrint("----------------------------7\n");
+				}
 				else {
+					DebugPrint("----------------------------8\n");
 					DebugPrint("Zero.c: child %s: Failed Assertion , page[k] = %s\n", name,
 							page[k]);
+					DebugPrint("----------------------------9\n");
+
 				}
-				*/
-				assert(page[k] == '\0');
+				//assert(page[k] == '\0');
 				
 			}
+			DebugPrint("----------------------------10\n");
 		}
+		DebugPrint("----------------------------11\n");
 		Sys_Sleep(1);
+		DebugPrint("----------------------------12\n");
 	}
 	USLOSS_Console("Child \"%s\" done.\n", name);
 	return 0;
