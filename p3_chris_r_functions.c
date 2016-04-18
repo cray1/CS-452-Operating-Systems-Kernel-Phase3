@@ -62,8 +62,7 @@ void FaultHandler(type, arg)
 	int type; /* USLOSS_MMU_INT */
 	void *arg; /* Address that caused the fault */
 {
-	//if (enableVerboseDebug == TRUE)
-	//USLOSS_Console("FaultHandler called, current PID: %d\n", P1_GetPID());
+		DebugPrint("FaultHandler called, type: %d, address arg: %p current PID: %d!\n", type, arg, P1_GetPID());
 
 	int cause = 0;
 	int status = 0;
@@ -80,23 +79,24 @@ void FaultHandler(type, arg)
 		fault.mbox = P2_MboxCreate(1, 0);
 		assert(fault.mbox >= 0);
 		size = sizeof(fault);
+		DebugPrint("FaultHandler: sending on pagerMbox, current PID: %d!\n", P1_GetPID());
 		status = P2_MboxSend(pagerMbox, &fault, &size);
-		if (enableVerboseDebug == TRUE)
-			USLOSS_Console("FaultHandler: status: %d, current PID: %d\n",
-					status, P1_GetPID());
+		DebugPrint("FaultHandler: done sending on pagerMbox, current PID: %d!\n", P1_GetPID());
 
-		//assert(status == 0);
+		assert(status >= 0);
 		assert(size == sizeof(fault));
 		size = 0;
+		DebugPrint("FaultHandler: waiting to receive on fault mbox %d, current PID: %d!\n", fault.mbox, P1_GetPID());
 		status = P2_MboxReceive(fault.mbox, NULL, &size);
+		DebugPrint("FaultHandler: done receive on fault mbox %d, current PID: %d!\n", fault.mbox, P1_GetPID());
 		assert(status == 0);
+		DebugPrint("FaultHandler: releasing fault mbox %d, current PID: %d!\n", fault.mbox, P1_GetPID());
 		status = P2_MboxRelease(fault.mbox);
+		DebugPrint("FaultHandler: done releasing fault mbox %d, current PID: %d!\n", fault.mbox, P1_GetPID());
 		assert(status == 0);
 	} else {
-		//if (enableVerboseDebug == TRUE)
-		//USLOSS_Console(
-		//	"FaultHandler: number of pagers is %d therefore, doing nothing , current PID: %d\n",
-		//num_pagers, P1_GetPID());
+		DebugPrint("FaultHandler: number of pagers is %d therefore, doing nothing , current PID: %d\n",
+		num_pagers, P1_GetPID());
 	}
 }
 
@@ -132,7 +132,7 @@ int Pager(void) {
 		/* Find a free frame */
 		int freeFrameFound = FALSE;
 		int i;
-		for (i = 0; i < P1_MAXPROC; i++) {
+		for (i = 0; i < numPages; i++) {
 			if (processes[fault.pid].pageTable[i].state == UNUSED) {
 				freeFrameFound = TRUE;
 				break;
@@ -161,9 +161,7 @@ int Pager(void) {
 				int pages;
 				/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
 				DebugPrint("Pager: filling with zeroes , current PID: %d!\n",  P1_GetPID());
-				 int numPagesPtr;
-									void *region = USLOSS_MmuRegion(&numPagesPtr);
-									memset(region,0,USLOSS_MmuPageSize()*numPagesPtr);
+				set_MMU_Frame_To_Zeroes(0,0);
 				DebugPrint("Pager: done filling with zeroes , current PID: %d!\n",  P1_GetPID());
 			} else {
 				// report error and abort
@@ -179,8 +177,12 @@ int Pager(void) {
 			DebugPrint("Pager: done unmapping page %d , current PID: %d!\n", i, P1_GetPID());
 		}
 
+		DebugPrint("Pager: send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
+
 		/* Unblock waiting (faulting) process */
-		P2_MboxCondSend(fault.mbox, NULL, &size);
+		P2_MboxSend(fault.mbox, NULL, &size);
+
+		DebugPrint("Pager: done with send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 	}
 	/* Never gets here. */
 	return 1;

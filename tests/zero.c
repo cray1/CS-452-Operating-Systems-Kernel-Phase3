@@ -61,9 +61,9 @@ static int Child(void *arg) {
 
 				if (page[k] == '\0')
 					DebugPrint(
-							"Zero.c: Passed Assertion assert(page[k] == '\\0');\n");
+							"Zero.c: child %s: Passed Assertion assert(page[k] == '\\0');\n", name);
 				else {
-					DebugPrint("Zero.c: Failed Assertion , page[k] = %s\n",
+					DebugPrint("Zero.c: child %s: Failed Assertion , page[k] = %s\n", name,
 							page[k]);
 				}
 				assert(page[k] == '\0');
