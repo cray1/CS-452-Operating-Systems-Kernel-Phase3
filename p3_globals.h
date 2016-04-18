@@ -105,7 +105,7 @@ void CheckMode(void);
 void Print_MMU_Error_Code(int error);
 char *get_MMU_Frame_Address(int pageNum);
 void set_MMU_Frame_contents(int pageNum,  volatile char *str);
-
+void set_MMU_Frame_To_Zeroes(int pageNum, int frameNum);
 
 
 #endif /* P3_GLOBALS_H_ */

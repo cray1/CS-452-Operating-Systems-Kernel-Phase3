@@ -158,7 +158,12 @@ char *get_MMU_Frame_Address(int pageNum){
 void set_MMU_Frame_contents(int pageNum,  volatile char *str){
 	char *frameAddr = get_MMU_Frame_Address(pageNum);
 	*frameAddr = *str;
-
 }
 
+void set_MMU_Frame_To_Zeroes(int pageNum, int frameNum){
+	int numPagesPtr;
+	int pageSize = USLOSS_MmuPageSize();
+	void *region = USLOSS_MmuRegion(&numPagesPtr);
+	memset(region +(pageNum * pageSize) + frameNum,0,USLOSS_MmuPageSize()*numPagesPtr);
+}
 
