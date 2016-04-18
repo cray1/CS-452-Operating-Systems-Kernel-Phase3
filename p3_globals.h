@@ -69,6 +69,7 @@ extern P3_VmStats	P3_vmStats;
 extern int pagerMbox;
 extern int IsVmInitialized;
 extern int *frames_list;
+extern P1_Semaphore process_sem;
 
 /*
  * Everybody uses the same tag.

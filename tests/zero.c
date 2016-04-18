@@ -67,7 +67,7 @@ static int Child(void *arg) {
 							page[k]);
 				}
 				*/
-				//assert(page[k] == '\0');
+				assert(page[k] == '\0');
 				
 			}
 		}

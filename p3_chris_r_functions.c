@@ -77,9 +77,10 @@ void FaultHandler(type, arg)
 		fault.pid = P1_GetPID();
 		fault.addr = arg;
 		fault.mbox = P2_MboxCreate(1, sizeof(fault));
+			
 		assert(fault.mbox >= 0);
 		size = sizeof(fault);
-		DebugPrint("FaultHandler: sending on pagerMbox, current PID: %d!\n", P1_GetPID());
+		DebugPrint("FaultHandler: sending on pagerMbox, current PID: %d!\n", P1_GetPID());	
 		status = P2_MboxSend(pagerMbox, &fault, &size);
 		DebugPrint("FaultHandler: done sending on pagerMbox, current PID: %d!\n", P1_GetPID());
 
@@ -144,7 +145,11 @@ int Pager(void) {
 			}
 		}
 		int page = 0;
-
+		int pageSize;
+		pageSize = fault.addr;
+		DebugPrint("%d %d %d\n", pageSize, pageSize/USLOSS_MmuPageSize(), USLOSS_MmuPageSize());
+		page = pageSize/USLOSS_MmuPageSize();
+		
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
 		if (freeFrameFound != TRUE) {
 			//run clock algorithm //Part B
