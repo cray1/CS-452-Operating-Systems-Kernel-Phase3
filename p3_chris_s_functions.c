@@ -69,6 +69,10 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	P3_vmStats.frames = frames;
 	numPages = pages;
 	numFrames = frames;
+	
+	frames_list = malloc(sizeof(int)*numFrames);
+	memset(frames_list,0,sizeof(int)*numFrames);
+	
 
 	IsVmInitialized = TRUE; //added by cray1
 	if (enableVerboseDebug == TRUE)
@@ -117,6 +121,11 @@ void P3_VmDestroy(void) {
 	int i;
 	for (i = 0; i < num_pagers; i++) {
 		P1_Kill(pagers_pids[i]);
+		Fault fault;
+		int size = sizeof(Fault);
+		fault.pid = -1;
+		
+		P2_MboxSend(pagerMbox, (void *)&fault, &size);
 	}
 	/*
 	 * Print vm statistics.
@@ -173,6 +182,7 @@ void P3_Switch(old, new)
 				if (status != USLOSS_MMU_OK) {
 					// report error and abort
 				}
+				processes[old].pageTable[page].state = UNUSED;
 			}
 		}
 		for (page = 0; page < processes[new].numPages; page++) {

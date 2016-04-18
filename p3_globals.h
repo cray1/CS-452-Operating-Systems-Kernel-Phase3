@@ -56,6 +56,7 @@ typedef struct Fault {
     void	*addr;		/* Address that caused the fault. */
     int		mbox;		/* Where to send reply. */
     /* Add more stuff here if necessary. */
+	int page;
 } Fault;
 
 extern Process	processes[P1_MAXPROC];
@@ -67,6 +68,7 @@ extern void	*vmRegion;
 extern P3_VmStats	P3_vmStats;
 extern int pagerMbox;
 extern int IsVmInitialized;
+extern int *frames_list;
 
 /*
  * Everybody uses the same tag.

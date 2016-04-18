@@ -76,7 +76,7 @@ void FaultHandler(type, arg)
 		P3_vmStats.faults++;
 		fault.pid = P1_GetPID();
 		fault.addr = arg;
-		fault.mbox = P2_MboxCreate(1, 0);
+		fault.mbox = P2_MboxCreate(1, sizeof(fault));
 		assert(fault.mbox >= 0);
 		size = sizeof(fault);
 		DebugPrint("FaultHandler: sending on pagerMbox, current PID: %d!\n", P1_GetPID());
@@ -126,18 +126,24 @@ int Pager(void) {
 
 		DebugPrint( "Pager waiting to receive on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 		P2_MboxReceive(pagerMbox, (void *) &fault, &size);
+		
+		if(fault.pid == -1){
+			P1_Quit(0);
+		}
 
 		DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
 		/* Find a free frame */
 		int freeFrameFound = FALSE;
 		int i;
-		for (i = 0; i < numPages; i++) {
-			if (processes[fault.pid].pageTable[i].state == UNUSED) {
+		for (i = 0; i < numFrames; i++) {
+			if (frames_list[i] == UNUSED) {
 				freeFrameFound = TRUE;
+				frames_list[i] = 1;
 				break;
 			}
 		}
+		int page = 0;
 
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
 		if (freeFrameFound != TRUE) {
@@ -150,11 +156,11 @@ int Pager(void) {
 			 * */
 
 			DebugPrint("Pager: found free frame %d, current PID: %d!\n", i, P1_GetPID());
-			processes[fault.pid].pageTable[i].state = INCORE;
-			processes[fault.pid].pageTable[i].frame = i; //TODO: 1:1 mapping may not hold true
+			processes[fault.pid].pageTable[page].state = INCORE;
+			processes[fault.pid].pageTable[page].frame = i; //TODO: 1:1 mapping may not hold true
 
 			DebugPrint("Pager: mapping frame %d to page %d, current PID: %d!\n", i,i, P1_GetPID());
-			int errorCode = USLOSS_MmuMap(TAG, i, i, USLOSS_MMU_PROT_RW);
+			int errorCode = USLOSS_MmuMap(TAG, page, i, USLOSS_MMU_PROT_RW);
 			DebugPrint("Pager: done mapping frame %d to page %d, current PID: %d!\n", i,i, P1_GetPID());
 			if (errorCode == USLOSS_MMU_OK) {
 				char *segment;
