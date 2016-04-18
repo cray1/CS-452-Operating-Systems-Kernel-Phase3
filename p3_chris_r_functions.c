@@ -73,7 +73,11 @@ void FaultHandler(type, arg)
 	cause = USLOSS_MmuGetCause();
 	assert(cause == USLOSS_MMU_FAULT);
 	if (num_pagers > 0) {
+		
+		P1_P(process_sem);
 		P3_vmStats.faults++;
+		P1_V(process_sem);
+		
 		fault.pid = P1_GetPID();
 		fault.addr = arg;
 		fault.mbox = P2_MboxCreate(1, sizeof(fault));
@@ -141,11 +145,13 @@ int Pager(void) {
 		int freeFrameFound = FALSE;
 		int freeFrameId;
 		for (freeFrameId = 0; freeFrameId < numFrames; freeFrameId++) {
+			P1_P(process_sem);
 			if (frames_list[freeFrameId] == UNUSED) {
 				freeFrameFound = TRUE;
 				frames_list[freeFrameId] = 1;
 				break;
 			}
+			P1_V(process_sem);
 		}
 	 
 	int page = fault.page;
@@ -159,11 +165,13 @@ int Pager(void) {
 			/*To handle a page fault a pager must first allocate a frame to hold the page. First, it checks a free list of frames.
 			 * If a free frame is found the page table entry for the faulted process is updated to refer to the free frame
 			 * */
-
+			
+			P1_P(process_sem);
 			DebugPrint("Pager: found free frame %d, current PID: %d!\n", freeFrameId, P1_GetPID());
 			processes[fault.pid].pageTable[page].state = INCORE;
 			processes[fault.pid].pageTable[page].frame = freeFrameId; //TODO: 1:1 mapping may not hold true
-
+			P1_V(process_sem);
+			
 			DebugPrint("Pager: mapping frame %d to page %d, current PID: %d!\n", freeFrameId,page, P1_GetPID());
 			int errorCode = USLOSS_MmuMap(TAG, page, freeFrameId, USLOSS_MMU_PROT_RW);
 			DebugPrint("Pager: done mapping frame %d to page %d, current PID: %d!\n", freeFrameId,page, P1_GetPID());

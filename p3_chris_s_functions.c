@@ -27,6 +27,8 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	if (enableVerboseDebug == TRUE)
 		USLOSS_Console("P3_VmInit called, current PID: %d\n", P1_GetPID());
 	CheckMode();
+	process_sem = P1_SemCreate(1);
+	P1_P(process_sem);
 
 	if (pagers > P3_MAX_PAGERS) {
 		// too many pagers
@@ -73,7 +75,6 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	frames_list = malloc(sizeof(int)*numFrames);
 	memset(frames_list,0,sizeof(int)*numFrames);
 	
-
 	IsVmInitialized = TRUE; //added by cray1
 	if (enableVerboseDebug == TRUE)
 		USLOSS_Console("pagers: %d\n", num_pagers);
@@ -81,13 +82,14 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	for (i = 0; i < num_pagers; i++) {
 		char name[10];
 		sprintf(name, "Pager_%d", i);
-		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK,
-				2);
+		P1_V(process_sem);
+		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK, 2);
+		P1_P(process_sem);
 		if (enableVerboseDebug == TRUE)
 			USLOSS_Console("P3_VmInit:  forked pager with pid %d\n",
 					pagers_pids[i]);
 	}
-
+	P1_V(process_sem);
 	return 0;
 }
 
@@ -120,20 +122,26 @@ void P3_VmDestroy(void) {
 	 */
 	int i;
 	for (i = 0; i < num_pagers; i++) {
+		P1_P(process_sem);
 		P1_Kill(pagers_pids[i]);
 		Fault fault;
 		int size = sizeof(Fault);
 		fault.pid = -1;
+		P1_V(process_sem);
 		
 		P2_MboxSend(pagerMbox, (void *)&fault, &size);
+		
 	}
 	/*
 	 * Print vm statistics.
 	 */
+	 
+	P1_P(process_sem);
 	USLOSS_Console("P3_vmStats:\n");
 	USLOSS_Console("pages: %d\n", P3_vmStats.pages);
 	USLOSS_Console("frames: %d\n", P3_vmStats.frames);
 	USLOSS_Console("blocks: %d\n", P3_vmStats.blocks);
+	P1_V(process_sem);
 	/* and so on... */
 }
 
@@ -163,19 +171,25 @@ void P3_Switch(old, new)
 		//if (enableVerboseDebug == TRUE)
 		//		USLOSS_Console("P3_Switch called, current PID: %d\n", P1_GetPID());
 
-		int page;
+		int page, pages;
 		int status;
 
 		CheckMode();
 		CheckPid(old);
 		CheckPid(new);
 
+		
+		P1_P(process_sem);
 		P3_vmStats.switches++;
-		for (page = 0; page < processes[old].numPages; page++) {
+		pages = processes[old].numPages;
+		P1_V(process_sem);
+		
+		for (page = 0; page < pages; page++) {
 			/*
 			 * If a page of the old process is in memory then a mapping
 			 * for it must be in the MMU. Remove it.
 			 */
+			P1_P(process_sem);
 			if (processes[old].pageTable[page].state == INCORE) {
 				assert(processes[old].pageTable[page].frame != -1);
 				status = USLOSS_MmuUnmap(TAG, page);
@@ -184,12 +198,20 @@ void P3_Switch(old, new)
 				}
 				processes[old].pageTable[page].state = UNUSED;
 			}
+			P1_V(process_sem);
 		}
-		for (page = 0; page < processes[new].numPages; page++) {
+		
+		P1_P(process_sem);
+		pages = processes[new].numPages;
+		P1_V(process_sem);
+		
+		
+		for (page = 0; page < pages; page++) {
 			/*
 			 * If a page of the new process is in memory then add a mapping
 			 * for it to the MMU.
 			 */
+			P1_V(process_sem);
 			if (processes[new].pageTable[page].state == INCORE) {
 				assert(processes[new].pageTable[page].frame != -1);
 				status = USLOSS_MmuMap(TAG, page,
@@ -199,6 +221,7 @@ void P3_Switch(old, new)
 					// report error and abort
 				}
 			}
+			P1_V(process_sem);
 		}
 	}
 }
@@ -229,6 +252,8 @@ void P3_Fork(pid)
 
 		CheckMode();
 		CheckPid(pid);
+		
+		P1_P(process_sem);
 		processes[pid].numPages = numPages;
 		processes[pid].pageTable = (PTE *) malloc(sizeof(PTE) * numPages);
 		for (i = 0; i < numPages; i++) {
@@ -236,5 +261,6 @@ void P3_Fork(pid)
 			processes[pid].pageTable[i].block = -1;
 			processes[pid].pageTable[i].state = UNUSED;
 		}
+		P1_V(process_sem);
 	}
 }
