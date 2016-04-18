@@ -161,7 +161,9 @@ int Pager(void) {
 				int pages;
 				/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
 				DebugPrint("Pager: filling with zeroes , current PID: %d!\n",  P1_GetPID());
-				memset(fault.addr,0,USLOSS_MmuPageSize());
+				 int numPagesPtr;
+									void *region = USLOSS_MmuRegion(&numPagesPtr);
+									memset(region,0,USLOSS_MmuPageSize()*numPagesPtr);
 				DebugPrint("Pager: done filling with zeroes , current PID: %d!\n",  P1_GetPID());
 			} else {
 				// report error and abort
