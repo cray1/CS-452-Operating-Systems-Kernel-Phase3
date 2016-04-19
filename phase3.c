@@ -26,7 +26,7 @@ int P4_Startup_Spawn_Wrapper(void* arg) {
 	s = (spawn_wrapper *) arg;
 	int i = s->f(s->arg);
 	//P3_Startup should call Sys_VmDestroy if P4_Startup returns
-	USLOSS_Console("P4_Startup returned, calling Sys_VmDestroy()!\n");
+	DebugPrint("P4_Startup returned, calling Sys_VmDestroy()!\n");
 	Sys_VmDestroy();
 	return i;
 }
@@ -37,7 +37,7 @@ int P3_Startup(void *arg){
 	int p4_pid;
 	int status;
 
-	USLOSS_Console("P3_Startup!\n");
+	DebugPrint("P3_Startup: called!\n");
 
 
 
