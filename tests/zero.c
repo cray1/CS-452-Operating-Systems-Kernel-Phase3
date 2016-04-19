@@ -102,7 +102,7 @@ P4_Startup(void *arg)
 
 void setup(void) {
     // Create the swap disk.
-    system("makedisk 1 100");
+    system("../usloss/makedisk/makedisk 1 100");
 }
 
 void cleanup(void) {
