@@ -24,8 +24,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	int i;
 	int tmp;
 
-	if (enableVerboseDebug == TRUE)
-		USLOSS_Console("P3_VmInit called, current PID: %d\n", P1_GetPID());
+	DebugPrint("P3_VmInit called, current PID: %d\n", P1_GetPID());
 	CheckMode();
 	process_sem = P1_SemCreate(1);
 	pager_sem = P1_SemCreate(1);
@@ -115,7 +114,7 @@ int Pager_Wrapper(void *arg) {
  */
 void P3_VmDestroy(void) {
 
-	USLOSS_Console("P3_VmDestroy called, current PID: %d\n", P1_GetPID());
+	DebugPrint("P3_VmDestroy called, current PID: %d\n", P1_GetPID());
 	CheckMode();
 	int result = USLOSS_MmuDone();
 	if(result == USLOSS_MMU_ERR_OFF){
@@ -179,8 +178,7 @@ void P3_Switch(old, new)
 
 	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
 
-		//if (enableVerboseDebug == TRUE)
-		//		USLOSS_Console("P3_Switch called, current PID: %d\n", P1_GetPID());
+		DebugPrint("P3_Switch called, current PID: %d\n", P1_GetPID());
 
 		int page, pages;
 		int status;
@@ -260,7 +258,7 @@ void P3_Fork(pid)
 	int pid; /* New process */
 {
 
-	USLOSS_Console("P3_Fork called, current PID: %d\n", P1_GetPID());
+	DebugPrint("P3_Fork called, current PID: %d\n", P1_GetPID());
 
 	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
 		int i;
