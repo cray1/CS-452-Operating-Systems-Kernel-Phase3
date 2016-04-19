@@ -28,6 +28,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 		USLOSS_Console("P3_VmInit called, current PID: %d\n", P1_GetPID());
 	CheckMode();
 	process_sem = P1_SemCreate(1);
+	pager_sem = P1_SemCreate(1);
 	P1_P(process_sem);
 
 	if (pagers > P3_MAX_PAGERS) {
@@ -129,18 +130,25 @@ void P3_VmDestroy(void) {
 		fault.pid = -1;
 		P1_V(process_sem);
 		
-		P2_MboxSend(pagerMbox, (void *)&fault, &size);
+		P2_MboxCondSend(pagerMbox, (void *)&fault, &size);
 		
 	}
 	/*
 	 * Print vm statistics.
 	 */
-	 
 	P1_P(process_sem);
 	USLOSS_Console("P3_vmStats:\n");
 	USLOSS_Console("pages: %d\n", P3_vmStats.pages);
 	USLOSS_Console("frames: %d\n", P3_vmStats.frames);
 	USLOSS_Console("blocks: %d\n", P3_vmStats.blocks);
+	USLOSS_Console("freeFrames: %d\n", P3_vmStats.freeFrames);
+	USLOSS_Console("freeBlocks: %d\n", P3_vmStats.freeBlocks);
+	USLOSS_Console("switches: %d\n", P3_vmStats.switches);
+	USLOSS_Console("faults: %d\n", P3_vmStats.faults);
+	USLOSS_Console("new: %d\n", P3_vmStats.new);
+	USLOSS_Console("pageIns: %d\n", P3_vmStats.pageIns);
+	USLOSS_Console("pageOuts: %d\n", P3_vmStats.pageOuts);
+	USLOSS_Console("replaced: %d\n", P3_vmStats.replaced);
 	P1_V(process_sem);
 	/* and so on... */
 }
@@ -178,51 +186,55 @@ void P3_Switch(old, new)
 		CheckPid(old);
 		CheckPid(new);
 
+		P1_P(pager_sem);
 		
 		P1_P(process_sem);
 		P3_vmStats.switches++;
 		pages = processes[old].numPages;
 		P1_V(process_sem);
-		
-		for (page = 0; page < pages; page++) {
-			/*
-			 * If a page of the old process is in memory then a mapping
-			 * for it must be in the MMU. Remove it.
-			 */
-			P1_P(process_sem);
-			if (processes[old].pageTable[page].state == INCORE) {
-				assert(processes[old].pageTable[page].frame != -1);
-				status = USLOSS_MmuUnmap(TAG, page);
-				if (status != USLOSS_MMU_OK) {
-					// report error and abort
+		if(processes[old].pageTable != NULL){
+			for (page = 0; page < pages; page++) {
+				/*
+				 * If a page of the old process is in memory then a mapping
+				 * for it must be in the MMU. Remove it.
+				 */
+				P1_P(process_sem);
+				if (processes[old].pageTable[page].state == INCORE) {
+					assert(processes[old].pageTable[page].frame != -1);
+					status = USLOSS_MmuUnmap(0, page);
+					if (status != USLOSS_MMU_OK) {
+						// report error and abort
+					}
 				}
-				processes[old].pageTable[page].state = UNUSED;
+				P1_V(process_sem);
 			}
-			P1_V(process_sem);
 		}
 		
 		P1_P(process_sem);
 		pages = processes[new].numPages;
 		P1_V(process_sem);
 		
-		
-		for (page = 0; page < pages; page++) {
-			/*
-			 * If a page of the new process is in memory then add a mapping
-			 * for it to the MMU.
-			 */
-			P1_V(process_sem);
-			if (processes[new].pageTable[page].state == INCORE) {
-				assert(processes[new].pageTable[page].frame != -1);
-				status = USLOSS_MmuMap(TAG, page,
-						processes[new].pageTable[page].frame,
-						USLOSS_MMU_PROT_RW);
-				if (status != USLOSS_MMU_OK) {
-					// report error and abort
+		if(processes[new].pageTable != NULL){
+			for (page = 0; page < pages; page++) {
+				/*
+				 * If a page of the new process is in memory then add a mapping
+				 * for it to the MMU.
+				 */
+				P1_V(process_sem);
+				if (processes[new].pageTable[page].state == INCORE) {
+					assert(processes[new].pageTable[page].frame != -1);
+					status = USLOSS_MmuMap(0, page,
+							processes[new].pageTable[page].frame,
+							USLOSS_MMU_PROT_RW);
+					if (status != USLOSS_MMU_OK) {
+						// report error and abort
+					}
 				}
+				P1_V(process_sem);
 			}
-			P1_V(process_sem);
 		}
+		
+		P1_V(pager_sem);
 	}
 }
 

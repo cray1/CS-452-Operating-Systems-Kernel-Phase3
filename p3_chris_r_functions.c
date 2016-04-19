@@ -128,6 +128,7 @@ int Pager(void) {
 	DebugPrint("Pager called, current PID: %d!\n", P1_GetPID());
 
 	while (1) {
+		
 		/* Wait for fault to occur (receive from pagerMbox) */
 		Fault fault;
 		int size = sizeof(Fault);
@@ -138,7 +139,10 @@ int Pager(void) {
 		if(fault.pid == -1){
 			P1_Quit(0);
 		}
-
+		
+		//P1_P(pager_sem);
+		
+		
 		DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
 		/* Find a free frame */
@@ -154,7 +158,7 @@ int Pager(void) {
 			P1_V(process_sem);
 		}
 	 
-	int page = fault.page;
+		int page = fault.page;
 		
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
 		if (freeFrameFound != TRUE) {
@@ -180,7 +184,20 @@ int Pager(void) {
 				int pages;
 				/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
 				DebugPrint("Pager: filling page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId, P1_GetPID());
+				DebugPrint("zero\n");
 				set_MMU_Frame_To_Zeroes(page,freeFrameId);
+				DebugPrint("after zero\n");
+				
+				//void *destination = vmRegion + (USLOSS_MmuPageSize() * page);
+
+				// copy nothing into the fram
+				//memset(destination, 0, USLOSS_MmuPageSize());
+				USLOSS_MmuSetAccess(freeFrameId, 0);
+
+				// unmap
+				//errorCode = USLOSS_MmuUnmap(0, page);
+				
+				
 				DebugPrint("Pager: done filling  page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId,  P1_GetPID());
 			} else {
 				// report error and abort
@@ -199,9 +216,11 @@ int Pager(void) {
 		DebugPrint("Pager: send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
 		/* Unblock waiting (faulting) process */
-		P2_MboxSend(fault.mbox, NULL, &size);
+		
+		P2_MboxSend(fault.mbox, &fault, &size);
 
 		DebugPrint("Pager: done with send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
+		//P1_V(pager_sem);
 	}
 	/* Never gets here. */
 	return 1;

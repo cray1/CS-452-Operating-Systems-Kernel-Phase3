@@ -10,6 +10,7 @@ int *pagers_pids;
 int num_pagers = 0;
 P1_Semaphore process_sem;
 int *frames_list;
+P1_Semaphore pager_sem;
 
 
 void	*vmRegion = NULL;
@@ -20,7 +21,7 @@ int pagerMbox = -1;
 
 
 
-int enableVerboseDebug = 1; // will print detailed progress for all functions when set to 1
+int enableVerboseDebug = 0; // will print detailed progress for all functions when set to 1
 
 int IsVmInitialized = FALSE;
 
@@ -165,6 +166,6 @@ void set_MMU_Frame_To_Zeroes(int pageNum, int frameNum){
 	int numPagesPtr;
 	int pageSize = USLOSS_MmuPageSize();
 	void *region = USLOSS_MmuRegion(&numPagesPtr);
-	memset(region +(pageNum * pageSize) + frameNum,0,USLOSS_MmuPageSize()*numPagesPtr);
+	memset(region +(pageNum * pageSize),0,USLOSS_MmuPageSize());
 }
 
