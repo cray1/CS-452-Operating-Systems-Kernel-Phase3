@@ -187,12 +187,12 @@ void P3_Switch(old, new)
 		CheckPid(old);
 		CheckPid(new);
 
-		P1_P(pager_sem);
 		
 		P1_P(process_sem);
 		P3_vmStats.switches++;
 		pages = processes[old].numPages;
 		P1_V(process_sem);
+		
 		if(processes[old].pageTable != NULL){
 			for (page = 0; page < pages; page++) {
 				/*
@@ -221,7 +221,7 @@ void P3_Switch(old, new)
 				 * If a page of the new process is in memory then add a mapping
 				 * for it to the MMU.
 				 */
-				P1_V(process_sem);
+				P1_P(process_sem);
 				if (processes[new].pageTable[page].state == INCORE) {
 					assert(processes[new].pageTable[page].frame != -1);
 					status = USLOSS_MmuMap(0, page,
@@ -235,7 +235,6 @@ void P3_Switch(old, new)
 			}
 		}
 		
-		P1_V(pager_sem);
 	}
 }
 

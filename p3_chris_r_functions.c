@@ -19,10 +19,11 @@
  */
 void P3_Quit(pid)
 	int pid; {
-	DebugPrint("P3_Quit called, current PID: %d\n", P1_GetPID());
-	//P1_DumpProcesses();
+	DebugPrint("P3_Quit called, current PID: %d, %d\n", P1_GetPID(), pid);
+
+	
 	P1_P(process_sem);
-	if (IsVmInitialized == TRUE && processes[pid].has_pages) { // do nothing if  VM system is uninitialized
+	if (IsVmInitialized == TRUE && processes[pid].numPages > 0 && processes[pid].pageTable != NULL) { // do nothing if  VM system is uninitialized
 
 		CheckMode();
 		CheckPid(pid);
@@ -34,7 +35,9 @@ void P3_Quit(pid)
 		 * Free any of the process's pages that are on disk and free any page frames the
 		 * process is using.
 		 */
+		 
 		int i;
+		i = 0;
 		for(i=0; i<numPages; i++){
 			frames_list[processes[pid].pageTable[i].frame] = UNUSED;
 			processes[pid].pageTable[i].frame = -1;
@@ -42,8 +45,7 @@ void P3_Quit(pid)
 		}
 
 		/* Clean up the page table. */
-
-		free((PTE *)processes[pid].pageTable); //this is where basic fails
+		free(processes[pid].pageTable); //this is where basic fails
 		processes[pid].numPages = 0;
 		processes[pid].pageTable = NULL;
 	}
@@ -163,6 +165,7 @@ int Pager(void) {
 			if (frames_list[freeFrameId] == UNUSED) {
 				freeFrameFound = TRUE;
 				frames_list[freeFrameId] = 1;
+				P1_V(process_sem);
 				break;
 			}
 			P1_V(process_sem);
