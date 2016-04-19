@@ -267,6 +267,7 @@ void P3_Fork(pid)
 		CheckPid(pid);
 		
 		P1_P(process_sem);
+		processes[pid].has_pages = TRUE;
 		processes[pid].numPages = numPages;
 		processes[pid].pageTable = (PTE *) malloc(sizeof(PTE) * numPages);
 		for (i = 0; i < numPages; i++) {
@@ -275,5 +276,7 @@ void P3_Fork(pid)
 			processes[pid].pageTable[i].state = UNUSED;
 		}
 		P1_V(process_sem);
+	}else{
+		processes[pid].has_pages = FALSE;
 	}
 }

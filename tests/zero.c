@@ -107,7 +107,7 @@ void setup(void) {
 
 void cleanup(void) {
     // Delete the swap disk.
-    int rc;
-    rc = unlink("disk1");
-    assert(rc == 0);
+    //int rc;
+    //rc = unlink("disk1");
+    //assert(rc == 0);
 }

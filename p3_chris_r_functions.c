@@ -20,11 +20,13 @@
 void P3_Quit(pid)
 	int pid; {
 
-	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
+	P1_P(process_sem);
+	if (IsVmInitialized == TRUE && processes[pid].has_pages) { // do nothing if  VM system is uninitialized
 		if (enableVerboseDebug == TRUE)
 			USLOSS_Console("P3_Quit called, current PID: %d\n", P1_GetPID());
 		CheckMode();
 		CheckPid(pid);
+		
 		assert(processes[pid].numPages > 0);
 		assert(processes[pid].pageTable != NULL);
 
@@ -39,6 +41,8 @@ void P3_Quit(pid)
 		processes[pid].numPages = 0;
 		processes[pid].pageTable = NULL;
 	}
+
+	P1_V(process_sem);
 }
 
 
