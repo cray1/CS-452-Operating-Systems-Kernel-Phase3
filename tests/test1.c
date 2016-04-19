@@ -29,16 +29,7 @@ int debugging = 1;
 int debugging = 0;
 #endif /* DEBUG */
 
-static void
-debug(char *fmt, ...)
-{
-	va_list ap;
 
-	if (debugging) {
-		va_start(ap, fmt);
-		USLOSS_VConsole(fmt, ap);
-	}
-}
 
 
 static int

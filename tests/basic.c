@@ -1,8 +1,8 @@
 /*
  * basic.c
- *
- *  Basic test case for Phase 3 milestone. It creates two processes, "A" and "B".
- *  Each process has two pages and there are four frames so that no page faults occur.
+ *  
+ *  Basic test case for Phase 3 Part A. It creates two processes, "A" and "B". 
+ *  Each process has two pages and there are four frames so that all pages fit in memory.
  *  Each process writes its name into the first byte of each of its pages, sleeps for one
  *  second (to give the other process time to run), then verifies that the first byte
  *  of each page is correct. It then iterates a fixed number of times.
@@ -30,7 +30,7 @@
 #define ITERATIONS 10
 
 static char *vmRegion;
-static char *names[] = {"A","B","C","D"};
+static char *names[] = {"A","B"};
 static int  pageSize;
 
 #ifdef DEBUG
@@ -39,16 +39,16 @@ int debugging = 1;
 int debugging = 0;
 #endif /* DEBUG */
 
-static void
+/*static void
 debug(char *fmt, ...)
 {
     va_list ap;
 
     if (debugging) {
-    va_start(ap, fmt);
-    USLOSS_VConsole(fmt, ap);
+        va_start(ap, fmt);
+        USLOSS_VConsole(fmt, ap);
     }
-}
+}*/
 
 
 static int
@@ -60,16 +60,16 @@ Child(void *arg)
 
     USLOSS_Console("Child \"%s\" starting.\n", name);
     for (i = 0; i < ITERATIONS; i++) {
-    for (j = 0; j < PAGES; j++) {
-        addr = vmRegion + j * pageSize;
-        USLOSS_Console("Child \"%s\" writing to page %d @ %p\n", name, j, addr);
-        *addr = *name;
-    }
-    Sys_Sleep(1);
-    for (j = 0; j < PAGES; j++) {
-        addr = vmRegion + j * pageSize;
-        assert(*addr == *name);
-    }
+        for (j = 0; j < PAGES; j++) {
+            addr = vmRegion + j * pageSize;
+            USLOSS_Console("Child \"%s\" writing to page %d @ %p\n", name, j, addr);
+            *addr = *name;
+        }
+        Sys_Sleep(1);
+        for (j = 0; j < PAGES; j++) {
+            addr = vmRegion + j * pageSize;
+            assert(*addr == *name);
+        }
     }
     USLOSS_Console("Child \"%s\" done.\n", name);
     return 0;
@@ -88,32 +88,33 @@ P4_Startup(void *arg)
     USLOSS_Console("P4_Startup starting.\n");
     rc = Sys_VmInit(PAGES, PAGES, numChildren * PAGES, 1, (void **) &vmRegion);
     if (rc != 0) {
-    USLOSS_Console("Sys_VmInit failed: %d\n", rc);
-    USLOSS_Halt(1);
+        USLOSS_Console("Sys_VmInit failed: %d\n", rc);
+        USLOSS_Halt(1);
     }
     pageSize = USLOSS_MmuPageSize();
     for (i = 0; i < numChildren; i++) {
-    rc = Sys_Spawn(names[i], Child, (void *) names[i], USLOSS_MIN_STACK * 2, 2, &pid);
-    assert(rc == 0);
+        rc = Sys_Spawn(names[i], Child, (void *) names[i], USLOSS_MIN_STACK * 2, 2, &pid);
+        assert(rc == 0);
     }
     for (i = 0; i < numChildren; i++) {
-    rc = Sys_Wait(&pid, &child);
-    assert(rc == 0);
+        rc = Sys_Wait(&pid, &child);
+        assert(rc == 0);
     }
+    Sys_VmDestroy();
     USLOSS_Console("P4_Startup done.\n");
     return 0;
 }
 
 void setup(void) {
-    //int rc;
+    int rc;
     // Create the swap disk.
-   // rc = system("makedisk 1 100");
-   // assert(rc == 0);
+    rc = system("makedisk 1 100");
+    assert(rc == 0);
 }
 
 void cleanup(void) {
     // Delete the swap disk.
-   // int rc;
-    //rc = unlink("disk1");
-   // assert(rc == 0);
+    int rc;
+    rc = unlink("disk1");
+    assert(rc == 0);
 }

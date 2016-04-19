@@ -25,7 +25,7 @@ endif
 USLOSS_VERSION = 2.12
 
 # Set to version of Phase 1 you want to use.
-PHASE1_VERSION = 1.6
+PHASE1_VERSION = 1.7
 
 # Set to version of Phase 2 you want to use.
 PHASE2_VERSION = 2.0
@@ -45,7 +45,7 @@ VGFLAGS = --track-origins=yes --leak-check=full --max-stackframe=100000
 LIBS = -lphase$(PHASE2_VERSION) -lphase$(PHASE1_VERSION) -lphase3 -lusloss$(USLOSS_VERSION) -luser$(USER_VERSION)
 
 # Change this if you want change which flags are passed to the C compiler.
-CFLAGS += -Wall -g -DPHASE_3
+CFLAGS += -Wall -Werror -g -DPHASE_3
 CFLAGS += -DDEBUG
 
 # You shouldn't need to change anything below here. 

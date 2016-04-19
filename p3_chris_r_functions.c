@@ -180,8 +180,7 @@ int Pager(void) {
 			int errorCode = USLOSS_MmuMap(TAG, page, freeFrameId, USLOSS_MMU_PROT_RW);
 			DebugPrint("Pager: done mapping frame %d to page %d, current PID: %d!\n", freeFrameId,page, P1_GetPID());
 			if (errorCode == USLOSS_MMU_OK) {
-				char *segment;
-				int pages;
+
 				/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
 				DebugPrint("Pager: filling page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId, P1_GetPID());
 				DebugPrint("zero\n");
