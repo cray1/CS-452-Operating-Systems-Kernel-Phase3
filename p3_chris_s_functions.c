@@ -117,7 +117,10 @@ void P3_VmDestroy(void) {
 
 	USLOSS_Console("P3_VmDestroy called, current PID: %d\n", P1_GetPID());
 	CheckMode();
-	USLOSS_MmuDone();
+	int result = USLOSS_MmuDone();
+	if(result == USLOSS_MMU_ERR_OFF){
+		return;
+	}
 	/*
 	 * Kill the pagers here.
 	 */

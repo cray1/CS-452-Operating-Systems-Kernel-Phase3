@@ -76,7 +76,7 @@ static int Child(void *arg) {
 					DebugPrint("----------------------------9\n");
 
 				}
-				//assert(page[k] == '\0');
+				assert(page[k] == '\0');
 				
 			}
 			DebugPrint("----------------------------10\n");
@@ -114,6 +114,7 @@ int P4_Startup(void *arg) {
 		assert(rc == 0);
 	}
 	Sys_VmDestroy();
+	Sys_DumpProcesses();
 	USLOSS_Console("P4_Startup done.\n");
 	return 0;
 }
