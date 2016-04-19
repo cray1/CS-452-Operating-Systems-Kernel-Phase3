@@ -30,7 +30,7 @@
 #define ITERATIONS 10
 
 static char *vmRegion;
-static char *names[] = {"A","B"};
+static char *names[] = {"A","B","C","D"};
 static int  pageSize;
 
 #ifdef DEBUG
