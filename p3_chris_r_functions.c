@@ -43,7 +43,7 @@ void P3_Quit(pid)
 
 		/* Clean up the page table. */
 
-		free((char *) processes[pid].pageTable); //this is where basic fails
+		free((PTE *)processes[pid].pageTable); //this is where basic fails
 		processes[pid].numPages = 0;
 		processes[pid].pageTable = NULL;
 	}
