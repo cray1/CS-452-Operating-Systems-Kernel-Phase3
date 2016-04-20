@@ -23,7 +23,7 @@ void P3_Quit(pid)
 
 	
 	P1_P(process_sem);
-	if (IsVmInitialized == TRUE && processes[pid].numPages > 0 && processes[pid].pageTable != NULL && P1_GetState(pid) != PROC_STATE_QUIT) { // do nothing if  VM system is uninitialized
+	if (IsVmInitialized == TRUE && processes[pid].numPages > 0 && processes[pid].pageTable != NULL ) { // do nothing if  VM system is uninitialized
 
 		CheckMode();
 		CheckPid(pid);
@@ -42,6 +42,7 @@ void P3_Quit(pid)
 			frames_list[processes[pid].pageTable[i].frame] = UNUSED;
 			processes[pid].pageTable[i].frame = -1;
 			processes[pid].pageTable[i].state = UNUSED;
+			USLOSS_MmuUnmap(TAG,i);
 		}
 
 		/* Clean up the page table. */
