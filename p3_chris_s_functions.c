@@ -205,6 +205,9 @@ void P3_Switch(old, new)
 					status = USLOSS_MmuUnmap(0, page);
 					if (status != USLOSS_MMU_OK) {
 						// report error and abort
+						USLOSS_Console("P3_Switch: ");
+						Print_MMU_Error_Code(status);
+						USLOSS_Halt(1);
 					}
 				}
 				P1_V(process_sem);
@@ -224,11 +227,15 @@ void P3_Switch(old, new)
 				P1_P(process_sem);
 				if (processes[new].pageTable[page].state == INCORE) {
 					assert(processes[new].pageTable[page].frame != -1);
-					status = USLOSS_MmuMap(0, page,
+					USLOSS_MmuUnmap(TAG, page);
+					status = USLOSS_MmuMap(TAG, page,
 							processes[new].pageTable[page].frame,
 							USLOSS_MMU_PROT_RW);
-					if (status != USLOSS_MMU_OK) {
+					if (status != USLOSS_MMU_OK ) {
 						// report error and abort
+						USLOSS_Console("P3_Switch: ");
+						Print_MMU_Error_Code(status);
+						USLOSS_Halt(1);
 					}
 				}
 				P1_V(process_sem);
