@@ -32,7 +32,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 
 	if (pagers > P3_MAX_PAGERS) {
 		// too many pagers
-		USLOSS_Trace("Too many pagers");
+		USLOSS_Trace("P3_VmInit: Too many pagers\n");
 		return -1;
 	} else {
 		num_pagers = pagers;
@@ -40,16 +40,16 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	pagers_pids = malloc(sizeof(int) * pagers);
 
 	if (mappings > USLOSS_MMU_NUM_TAG * pages) {
-		USLOSS_Trace("Too many pagers");
+		USLOSS_Trace("P3_VmInit: mappings > USLOSS_MMU_NUM_TAG * pages\n");
 		return -1;
 		// mappings too big
 	}
 
 	status = USLOSS_MmuInit(mappings, pages, frames);
-	if (status != USLOSS_MMU_OK) {
-		USLOSS_Console("P3_VmInit: couldn't initialize MMU, status %d\n",
-				status);
-		USLOSS_Halt(1);
+	if (status == USLOSS_MMU_ERR_ON) {
+		return -2;
+	} else if (status != USLOSS_MMU_OK) {
+		return -1;
 	}
 	vmRegion = USLOSS_MmuRegion(&tmp);
 	assert(vmRegion != NULL);
@@ -71,10 +71,10 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	P3_vmStats.frames = frames;
 	numPages = pages;
 	numFrames = frames;
-	
-	frames_list = malloc(sizeof(int)*numFrames);
-	memset(frames_list,0,sizeof(int)*numFrames);
-	
+
+	frames_list = malloc(sizeof(int) * numFrames);
+	memset(frames_list, 0, sizeof(int) * numFrames);
+
 	IsVmInitialized = TRUE; //added by cray1
 	if (enableVerboseDebug == TRUE)
 		USLOSS_Console("pagers: %d\n", num_pagers);
@@ -83,7 +83,8 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 		char name[10];
 		sprintf(name, "Pager_%d", i);
 		P1_V(process_sem);
-		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK, P3_PAGER_PRIORITY);
+		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK,
+				P3_PAGER_PRIORITY);
 		P1_P(process_sem);
 		if (enableVerboseDebug == TRUE)
 			USLOSS_Console("P3_VmInit:  forked pager with pid %d\n",
@@ -117,7 +118,7 @@ void P3_VmDestroy(void) {
 	DebugPrint("P3_VmDestroy called, current PID: %d\n", P1_GetPID());
 	CheckMode();
 	int result = USLOSS_MmuDone();
-	if(result == USLOSS_MMU_ERR_OFF){
+	if (result == USLOSS_MMU_ERR_OFF) {
 		return;
 	}
 	/*
@@ -131,9 +132,9 @@ void P3_VmDestroy(void) {
 		int size = sizeof(Fault);
 		fault.pid = -1;
 		P1_V(process_sem);
-		
-		P2_MboxCondSend(pagerMbox, (void *)&fault, &size);
-		
+
+		P2_MboxCondSend(pagerMbox, (void *) &fault, &size);
+
 	}
 	/*
 	 * Print vm statistics.
@@ -187,13 +188,12 @@ void P3_Switch(old, new)
 		CheckPid(old);
 		CheckPid(new);
 
-		
 		P1_P(process_sem);
 		P3_vmStats.switches++;
 		pages = processes[old].numPages;
 		P1_V(process_sem);
-		
-		if(processes[old].pageTable != NULL){
+
+		if (processes[old].pageTable != NULL) {
 			for (page = 0; page < pages; page++) {
 				/*
 				 * If a page of the old process is in memory then a mapping
@@ -210,12 +210,12 @@ void P3_Switch(old, new)
 				P1_V(process_sem);
 			}
 		}
-		
+
 		P1_P(process_sem);
 		pages = processes[new].numPages;
 		P1_V(process_sem);
-		
-		if(processes[new].pageTable != NULL){
+
+		if (processes[new].pageTable != NULL) {
 			for (page = 0; page < pages; page++) {
 				/*
 				 * If a page of the new process is in memory then add a mapping
@@ -234,7 +234,7 @@ void P3_Switch(old, new)
 				P1_V(process_sem);
 			}
 		}
-		
+
 	}
 }
 
@@ -264,7 +264,7 @@ void P3_Fork(pid)
 
 		CheckMode();
 		CheckPid(pid);
-		
+
 		P1_P(process_sem);
 		processes[pid].has_pages = TRUE;
 		processes[pid].numPages = numPages;
@@ -275,7 +275,7 @@ void P3_Fork(pid)
 			processes[pid].pageTable[i].state = UNUSED;
 		}
 		P1_V(process_sem);
-	}else{
+	} else {
 		processes[pid].has_pages = FALSE;
 	}
 }
