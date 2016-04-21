@@ -205,7 +205,7 @@ int Pager(void) {
 
 				// copy nothing into the fram
 				//memset(destination, 0, USLOSS_MmuPageSize());
-				USLOSS_MmuSetAccess(freeFrameId, 0);
+				USLOSS_MmuSetAccess(freeFrameId,USLOSS_MMU_PROT_RW);
 
 				// unmap
 				//errorCode = USLOSS_MmuUnmap(0, page);
