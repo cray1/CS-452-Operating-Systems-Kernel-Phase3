@@ -47,6 +47,7 @@ typedef struct Process {
     PTE		*pageTable;	/* The page table for the process. */
     /* Add more stuff here if necessary. */
 	int 	has_pages;
+	int pager_daemon_marked_to_kill;
 } Process;
 
 /*

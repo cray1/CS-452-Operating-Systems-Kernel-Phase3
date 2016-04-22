@@ -84,7 +84,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 		sprintf(name, "Pager_%d", i);
 		P1_V(process_sem);
 		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK,
-				P3_PAGER_PRIORITY);
+		P3_PAGER_PRIORITY);
 		P1_P(process_sem);
 		if (enableVerboseDebug == TRUE)
 			USLOSS_Console("P3_VmInit:  forked pager with pid %d\n",
@@ -127,7 +127,11 @@ void P3_VmDestroy(void) {
 	int i;
 	for (i = 0; i < num_pagers; i++) {
 		P1_P(process_sem);
-		P1_Kill(pagers_pids[i]);
+		if(isValidPid(pagers_pids[i]) == TRUE)
+		{
+			processes[pagers_pids[i]].pager_daemon_marked_to_kill = 1;
+			P1_Kill(pagers_pids[i]);
+		}
 		Fault fault;
 		int size = sizeof(Fault);
 		fault.pid = -1;
@@ -140,6 +144,16 @@ void P3_VmDestroy(void) {
 	 * Print vm statistics.
 	 */
 	P1_P(process_sem);
+
+	P3_vmStats.freeFrames = 0;
+	int l;
+	for (l = 0; l < numFrames; l++) {
+		if(frames_list[l] == UNUSED){
+			P3_vmStats.freeFrames = P3_vmStats.freeFrames +1;
+		}
+	}
+
+
 	USLOSS_Console("P3_vmStats:\n");
 	USLOSS_Console("pages: %d\n", P3_vmStats.pages);
 	USLOSS_Console("frames: %d\n", P3_vmStats.frames);
@@ -231,7 +245,7 @@ void P3_Switch(old, new)
 					status = USLOSS_MmuMap(TAG, page,
 							processes[new].pageTable[page].frame,
 							USLOSS_MMU_PROT_RW);
-					if (status != USLOSS_MMU_OK ) {
+					if (status != USLOSS_MMU_OK) {
 						// report error and abort
 						USLOSS_Console("P3_Switch: ");
 						Print_MMU_Error_Code(status);
