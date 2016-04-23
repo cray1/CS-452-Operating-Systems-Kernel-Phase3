@@ -150,6 +150,7 @@ int Pager(void) {
 		P2_MboxReceive(pagerMbox, (void *) &fault, &size);
 		
 		if(fault.pid == -1 || processes[P1_GetPID()].pager_daemon_marked_to_kill == TRUE){
+			processes[P1_GetPID()].pager_daemon_marked_to_kill = FALSE;
 			P1_Quit(0);
 		}
 		
