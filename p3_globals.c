@@ -10,7 +10,7 @@ int *pagers_pids;
 int num_pagers = 0;
 P1_Semaphore process_sem;
 Frame_Entry *frames_list;
-P1_Semaphore pager_sem;
+P1_Semaphore frame_sem;
 
 
 void	*vmRegion = NULL;

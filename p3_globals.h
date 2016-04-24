@@ -78,7 +78,7 @@ extern int pagerMbox;
 extern int IsVmInitialized;
 extern Frame_Entry *frames_list;
 extern P1_Semaphore process_sem;
-extern P1_Semaphore pager_sem;
+extern P1_Semaphore frame_sem;
 
 /*
  * Everybody uses the same tag.

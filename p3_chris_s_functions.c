@@ -27,7 +27,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	DebugPrint("P3_VmInit called, current PID: %d\n", P1_GetPID());
 	CheckMode();
 	process_sem = P1_SemCreate(1);
-	pager_sem = P1_SemCreate(1);
+	frame_sem = P1_SemCreate(1);
 	P1_P(process_sem);
 
 	if (pagers > P3_MAX_PAGERS) {
