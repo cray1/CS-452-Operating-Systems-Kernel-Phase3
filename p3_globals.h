@@ -61,6 +61,12 @@ typedef struct Fault {
 	int page;
 } Fault;
 
+typedef struct Frame_Entry{
+	int frameId;
+	int state;
+	int page;
+} Frame_Entry;
+
 extern Process	processes[P1_MAXPROC];
 extern int	numPages;
 extern int	numFrames;
@@ -70,7 +76,7 @@ extern void	*vmRegion;
 extern P3_VmStats	P3_vmStats;
 extern int pagerMbox;
 extern int IsVmInitialized;
-extern int *frames_list;
+extern Frame_Entry *frames_list;
 extern P1_Semaphore process_sem;
 extern P1_Semaphore pager_sem;
 
@@ -85,6 +91,9 @@ extern P1_Semaphore pager_sem;
 #define UNUSED	0
 #define INCORE	1
 /* You'll probably want more states */
+
+#define OPEN -10
+#define CLOSED 10
 
 
 void DebugPrint(char *fmt, ...);

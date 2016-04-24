@@ -72,8 +72,17 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	numPages = pages;
 	numFrames = frames;
 
-	frames_list = malloc(sizeof(int) * numFrames);
-	memset(frames_list, 0, sizeof(int) * numFrames);
+
+	//initialize frames list
+	frames_list = malloc(sizeof(Frame_Entry) * numFrames);
+	memset(frames_list, 0, sizeof(Frame_Entry) * numFrames);
+
+	int l;
+	for(l=0; l<numFrames; l++){
+		frames_list[l].frameId = -1;
+		frames_list[l].page = -1;
+		frames_list[l].state = UNUSED;
+	}
 
 	IsVmInitialized = TRUE; //added by cray1
 	if (enableVerboseDebug == TRUE)
@@ -148,7 +157,7 @@ void P3_VmDestroy(void) {
 	P3_vmStats.freeFrames = 0;
 	int l;
 	for (l = 0; l < numFrames; l++) {
-		if(frames_list[l] == UNUSED){
+		if(frames_list[l].state == UNUSED){
 			P3_vmStats.freeFrames = P3_vmStats.freeFrames +1;
 		}
 	}

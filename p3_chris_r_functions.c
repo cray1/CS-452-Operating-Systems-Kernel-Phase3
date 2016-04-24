@@ -39,7 +39,9 @@ void P3_Quit(pid)
 		int i;
 		i = 0;
 		for(i=0; i<numPages; i++){
-			frames_list[processes[pid].pageTable[i].frame] = UNUSED;
+			frames_list[processes[pid].pageTable[i].frame].state =  UNUSED;
+			frames_list[processes[pid].pageTable[i].frame].page =  -1;
+			frames_list[processes[pid].pageTable[i].frame].frameId = -1;
 			processes[pid].pageTable[i].frame = -1;
 			processes[pid].pageTable[i].state = UNUSED;
 			USLOSS_MmuUnmap(TAG,i);
@@ -164,9 +166,9 @@ int Pager(void) {
 		int freeFrameId;
 		for (freeFrameId = 0; freeFrameId < numFrames; freeFrameId++) {
 			P1_P(process_sem);
-			if (frames_list[freeFrameId] == UNUSED) {
+			if (frames_list[freeFrameId].state == UNUSED) {
 				freeFrameFound = TRUE;
-				frames_list[freeFrameId] = 1;
+				frames_list[freeFrameId].state = INCORE;
 				P1_V(process_sem);
 				break;
 			}
