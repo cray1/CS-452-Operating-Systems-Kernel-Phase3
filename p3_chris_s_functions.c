@@ -55,6 +55,8 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	assert(vmRegion != NULL);
 	assert(tmp >= pages);
 	USLOSS_IntVec[USLOSS_MMU_INT] = FaultHandler;
+
+	/* Initialize process table */
 	for (i = 0; i < P1_MAXPROC; i++) {
 		processes[i].numPages = 0;
 		processes[i].pageTable = NULL;
@@ -95,8 +97,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK,
 		P3_PAGER_PRIORITY);
 		P1_P(process_sem);
-		if (enableVerboseDebug == TRUE)
-			USLOSS_Console("P3_VmInit:  forked pager with pid %d\n",
+		DebugPrint("P3_VmInit:  forked pager with pid %d\n",
 					pagers_pids[i]);
 	}
 	P1_V(process_sem);
@@ -303,6 +304,8 @@ void P3_Fork(pid)
 			processes[pid].pageTable[i].frame = -1;
 			processes[pid].pageTable[i].block = -1;
 			processes[pid].pageTable[i].state = UNUSED;
+			processes[pid].pageTable[i].isInMainMemory = FALSE;
+			processes[pid].pageTable[i].isOldPage = FALSE;
 		}
 		P1_V(process_sem);
 	} else {

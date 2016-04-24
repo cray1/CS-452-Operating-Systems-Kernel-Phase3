@@ -11,6 +11,9 @@ int num_pagers = 0;
 P1_Semaphore process_sem;
 Frame_Entry *frames_list;
 P1_Semaphore frame_sem;
+int *blockTable;
+int lastFrameIndex = 0;
+
 
 
 void	*vmRegion = NULL;

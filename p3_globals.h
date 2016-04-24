@@ -37,6 +37,8 @@ typedef struct PTE {
     int		frame;		/* The frame that stores the page. */
     int		block;		/* The disk block that stores the page. */
     /* Add more stuff here */
+    int isInMainMemory;
+    int isOldPage;
 } PTE;
 
 /*rr
@@ -79,6 +81,9 @@ extern int IsVmInitialized;
 extern Frame_Entry *frames_list;
 extern P1_Semaphore process_sem;
 extern P1_Semaphore frame_sem;
+extern int *blockTable;
+extern int lastFrameIndex;
+
 
 /*
  * Everybody uses the same tag.

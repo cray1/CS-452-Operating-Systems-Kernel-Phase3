@@ -156,10 +156,11 @@ int Pager(void) {
 			P1_Quit(0);
 		}
 		
-		//P1_P(pager_sem);
 		
 		
 		DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
+
+		P1_P(frame_sem);
 
 		/* Find a free frame */
 		int freeFrameFound = FALSE;
@@ -175,11 +176,14 @@ int Pager(void) {
 			P1_V(process_sem);
 		}
 	 
+		P1_V(frame_sem);
+
 		int page = fault.page;
 		
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
 		if (freeFrameFound != TRUE) {
 			//run clock algorithm //Part B
+			if()
 		}
 
 		if (freeFrameFound == TRUE) {
@@ -191,7 +195,7 @@ int Pager(void) {
 			DebugPrint("Pager: found free frame %d, current PID: %d!\n", freeFrameId, P1_GetPID());
 			processes[fault.pid].pageTable[page].state = INCORE;
 			processes[fault.pid].pageTable[page].frame = freeFrameId; //TODO: 1:1 mapping may not hold true
-			P1_V(process_sem);
+
 			
 			DebugPrint("Pager: mapping frame %d to page %d, current PID: %d!\n", freeFrameId,page, P1_GetPID());
 			int errorCode = USLOSS_MmuMap(TAG, page, freeFrameId, USLOSS_MMU_PROT_RW);
@@ -199,22 +203,23 @@ int Pager(void) {
 			if (errorCode == USLOSS_MMU_OK) {
 
 				/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
-				DebugPrint("Pager: filling page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId, P1_GetPID());
-				DebugPrint("zero\n");
-				set_MMU_Frame_To_Zeroes(page,freeFrameId);
-				DebugPrint("after zero\n");
 				
-				//void *destination = vmRegion + (USLOSS_MmuPageSize() * page);
+				//if new page, fill with zeros
+				if(	processes[fault.pid].pageTable[page].isOldPage == FALSE){
+					DebugPrint("Pager: filling page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId, P1_GetPID());
+					set_MMU_Frame_To_Zeroes(page,freeFrameId);
+					USLOSS_MmuSetAccess(freeFrameId,USLOSS_MMU_PROT_RW);
+					DebugPrint("Pager: done filling  page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId,  P1_GetPID());
+				}
+				else{ // else load from disk
 
-				// copy nothing into the fram
-				//memset(destination, 0, USLOSS_MmuPageSize());
-				USLOSS_MmuSetAccess(freeFrameId,USLOSS_MMU_PROT_RW);
+				}
 
-				// unmap
-				//errorCode = USLOSS_MmuUnmap(0, page);
+				processes[fault.pid].pageTable[page].isOldPage = TRUE;
+				processes[fault.pid].pageTable[page].isInMainMemory = TRUE;
+
 				
 				
-				DebugPrint("Pager: done filling  page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId,  P1_GetPID());
 			} else {
 				// report error and abort
 				Print_MMU_Error_Code(errorCode);
@@ -227,6 +232,8 @@ int Pager(void) {
 			DebugPrint("Pager: unmapping page %d , current PID: %d!\n", page, P1_GetPID());
 			errorCode = USLOSS_MmuUnmap(TAG,freeFrameId);
 			DebugPrint("Pager: done unmapping page %d , current PID: %d!\n", page, P1_GetPID());
+
+			P1_V(process_sem);
 		}
 
 		DebugPrint("Pager: send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
