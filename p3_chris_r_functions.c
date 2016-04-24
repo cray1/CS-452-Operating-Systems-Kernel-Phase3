@@ -183,7 +183,7 @@ int Pager(void) {
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
 		if (freeFrameFound != TRUE) {
 			//run clock algorithm //Part B
-			if()
+			//if()
 		}
 
 		if (freeFrameFound == TRUE) {
@@ -207,7 +207,8 @@ int Pager(void) {
 				//if new page, fill with zeros
 				if(	processes[fault.pid].pageTable[page].isOldPage == FALSE){
 					DebugPrint("Pager: filling page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId, P1_GetPID());
-					set_MMU_Frame_To_Zeroes(page,freeFrameId);
+
+					set_MMU_PageFrame_To_Zeroes(page);
 					USLOSS_MmuSetAccess(freeFrameId,USLOSS_MMU_PROT_RW);
 					DebugPrint("Pager: done filling  page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId,  P1_GetPID());
 				}
