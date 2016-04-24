@@ -124,7 +124,7 @@ void CheckMode(void);
 
 void Print_MMU_Error_Code(int error);
 char *get_MMU_PageFrame_Address(int pageNum);
-void set_MMU_PageFrame_contents(int pageNum, char *str) ;
+void set_MMU_PageFrame_contents(int pageNum,  void *str, int size);
 void set_MMU_PageFrame_To_Zeroes(int pageNum);
 
 

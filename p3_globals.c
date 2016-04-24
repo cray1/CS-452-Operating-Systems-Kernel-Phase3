@@ -145,13 +145,13 @@ char *get_MMU_PageFrame_Address(int pageNum) {
 	return addr + pageNum * pageSize;
 }
 
-void set_MMU_PageFrame_contents(int pageNum,  char *str) {
+void set_MMU_PageFrame_contents(int pageNum,  void *str, int size) {
 
 	int numPagesPtr;
 	void *region = USLOSS_MmuRegion(&numPagesPtr);
 	int *frame_location = region + (pageNum * USLOSS_MmuPageSize());
 	// memcpy to buffer
-	memcpy(frame_location, str, USLOSS_MmuPageSize());
+	memcpy(frame_location, str, size);
 }
 
 void set_MMU_PageFrame_To_Zeroes(int pageNum) {
