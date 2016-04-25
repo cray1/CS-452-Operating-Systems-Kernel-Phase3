@@ -144,8 +144,8 @@ int nextBlock = 0; // used for finding incremental disk blocks to use when assig
 int Pager(void) {
 	DebugPrint("Pager called, current PID: %d!\n", P1_GetPID());
 
-	int numPagesPtr;
-	void *region = USLOSS_MmuRegion(&numPagesPtr);
+//	int numPagesPtr;
+//	void *region = USLOSS_MmuRegion(&numPagesPtr);
 
 	while (1) {
 
@@ -227,14 +227,14 @@ int Pager(void) {
 				void *buffer = malloc(USLOSS_MmuPageSize());
 
 				//frame address
-				int  *frameAddr = region + (swapPageId * USLOSS_MmuPageSize());
+				char *frameAddr = "Z";
 
 				//copy to buffer and write to disk
-				memcpy(buffer,frameAddr, USLOSS_MmuPageSize());
+				//memcpy(buffer,frameAddr, USLOSS_MmuPageSize());
 
 				USLOSS_Trace("\tPager: swapFrameId %d, writing to disk  , current PID: %d!\n",swapFrameId, P1_GetPID());
 				//write to disk
-				P2_DiskWrite(diskUnit,block,0,Disk_Information.numSectorsPerTrack, buffer);
+				P2_DiskWrite(diskUnit,0,0,1,frameAddr);
 
 				free(buffer);
 				USLOSS_Trace("\tPager: swapFrameId %d, done writing to disk, current PID: %d!\n",swapFrameId, P1_GetPID());
@@ -265,55 +265,28 @@ int Pager(void) {
 		}
 
 		else {
-			/*To handle a page fault a pager must first allocate a frame to hold the page. First, it checks a free list of frames.
-			 * If a free frame is found the page table entry for the faulted process is updated to refer to the free frame
-			 * */
-
-
-			DebugPrint("Pager: found free frame %d, current PID: %d!\n", freeFrameId, P1_GetPID());
 			processes[fault.pid].pageTable[page].state = INCORE;
-			processes[fault.pid].pageTable[page].frame = freeFrameId; //TODO: 1:1 mapping may not hold true
+			processes[fault.pid].pageTable[page].frame = freeFrameId;
 
-
-			DebugPrint("Pager: mapping frame %d to page %d, current PID: %d!\n", freeFrameId,page, P1_GetPID());
 			int errorCode = USLOSS_MmuMap(TAG, page, freeFrameId, USLOSS_MMU_PROT_RW);
-			DebugPrint("Pager: done mapping frame %d to page %d, current PID: %d!\n", freeFrameId,page, P1_GetPID());
 			if (errorCode == USLOSS_MMU_OK) {
-
-				/* Load page into frame from disk (Part B) or fill with zeros (Part A) */ //
-
 				//if new page, fill with zeros
-				if(	processes[fault.pid].pageTable[page].isOldPage == FALSE){
-					DebugPrint("Pager: filling page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId, P1_GetPID());
-
+				if(	processes[fault.pid].pageTable[page].block <0){
 					set_MMU_PageFrame_To_Zeroes(page);
 					USLOSS_MmuSetAccess(freeFrameId,USLOSS_MMU_PROT_RW);
-					DebugPrint("Pager: done filling  page %d frame %d with zeroes , current PID: %d!\n", page, freeFrameId,  P1_GetPID());
 				}
 				else{ // else load from disk
 
 				}
-
-				processes[fault.pid].pageTable[page].isOldPage = TRUE;
-				processes[fault.pid].pageTable[page].isInMainMemory = TRUE;
-
-
-
-
-			} else {
+			}
+			else {
 				// report error and abort
 				Print_MMU_Error_Code(errorCode);
-				USLOSS_Trace(
-						"Pager with pid %d received an MMU error! Halting!\n",
-						P1_GetPID());
+				USLOSS_Trace("Pager with pid %d received an MMU error! Halting!\n",P1_GetPID());
 				P1_DumpProcesses();
 				USLOSS_Halt(1);
 			}
-			DebugPrint("Pager: unmapping page %d , current PID: %d!\n", page, P1_GetPID());
 			errorCode = USLOSS_MmuUnmap(TAG,freeFrameId);
-			DebugPrint("Pager: done unmapping page %d , current PID: %d!\n", page, P1_GetPID());
-
-
 		}
 
 		DebugPrint("Pager: send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
