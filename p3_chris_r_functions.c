@@ -144,6 +144,9 @@ int nextBlock = 0; // used for finding incremental disk blocks to use when assig
 int Pager(void) {
 	DebugPrint("Pager called, current PID: %d!\n", P1_GetPID());
 
+	int numPagesPtr;
+	void *region = USLOSS_MmuRegion(&numPagesPtr);
+
 	while (1) {
 
 		/* Wait for fault to occur (receive from pagerMbox) */
@@ -184,16 +187,17 @@ int Pager(void) {
 
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
 		if (freeFrameFound != TRUE) {
-
+			USLOSS_Trace("Pager:  did not find free frame , current PID: %d!\n", P1_GetPID());
 			//find random frame to use (for now)
 			int swapFrameId = 0;
 			while(1){
-				int i = rand() % (numFrames-1);
+				int i = rand() % 3;
 				if(frames_list[i].state == INCORE){
 					swapFrameId = i;
 					break;
 				}
 			}
+			USLOSS_Trace("\tPager: swapFrameId %d  , current PID: %d!\n",swapFrameId, P1_GetPID());
 
 			int accessPtr;
 			USLOSS_MmuGetAccess(swapFrameId, &accessPtr);
@@ -202,8 +206,12 @@ int Pager(void) {
 			//get swap page associated with frame
 			int swapPageId =  frames_list[swapFrameId].page;
 
+			USLOSS_Trace("\tPager: swapPageId %d  , current PID: %d!\n",swapPageId, P1_GetPID());
+
 			//if frame is dirty, write its page to swap disk
 			if(dirty == USLOSS_MMU_DIRTY){
+				USLOSS_Trace("\tPager: swapFrameId %d is dirty  , current PID: %d!\n",swapFrameId, P1_GetPID());
+
 				//write swap frame's page to disk
 				// get diskBlock to write to
 				int block = processes[fault.pid].pageTable[swapPageId].block;
@@ -213,23 +221,46 @@ int Pager(void) {
 					nextBlock++;
 					processes[fault.pid].pageTable[swapPageId].block = block;
 				}
+				USLOSS_Trace("\tPager: swapFrameId %d, using block %d  , current PID: %d!\n",swapFrameId, block, P1_GetPID());
 
 				//create buffer to store page
 				void *buffer = malloc(USLOSS_MmuPageSize());
 
 				//frame address
-				int  *frameAddr = vmRegion + (swapFrameId * USLOSS_MmuPageSize());
+				int  *frameAddr = region + (swapPageId * USLOSS_MmuPageSize());
 
 				//copy to buffer and write to disk
 				memcpy(buffer,frameAddr, USLOSS_MmuPageSize());
 
+				USLOSS_Trace("\tPager: swapFrameId %d, writing to disk  , current PID: %d!\n",swapFrameId, P1_GetPID());
 				//write to disk
 				P2_DiskWrite(diskUnit,block,0,Disk_Information.numSectorsPerTrack, buffer);
+
+				free(buffer);
+				USLOSS_Trace("\tPager: swapFrameId %d, done writing to disk, current PID: %d!\n",swapFrameId, P1_GetPID());
 			}
 			//update swap frame owner's page table to reflect that page is no longer in frame
+			processes[fault.pid].pageTable[swapPageId].frame = -1;
+			processes[fault.pid].pageTable[swapPageId].isInMainMemory = FALSE;
 
-			//zero out old frame
-			set_MMU_PageFrame_To_Zeroes(swapFrameId);
+			//if new page on disk, load
+			if(processes[fault.pid].pageTable[page].block != -1){
+				char *buf = malloc(USLOSS_MmuPageSize());
+				P2_DiskRead(diskUnit,processes[fault.pid].pageTable[page].block,0,Disk_Information.numSectorsPerTrack, buf);
+
+				//map memory
+				int result = USLOSS_MmuMap(TAG,page, swapFrameId, USLOSS_MMU_PROT_RW);
+				if (result != USLOSS_MMU_OK) {
+					// report error and abort
+					Print_MMU_Error_Code(result);
+					USLOSS_Trace( "Pager with pid %d received an MMU error! Halting!\n", P1_GetPID());
+					P1_DumpProcesses();
+					USLOSS_Halt(1);
+				}
+				set_MMU_PageFrame_contents(page,buf,USLOSS_MmuPageSize());
+			}
+
+
 
 		}
 

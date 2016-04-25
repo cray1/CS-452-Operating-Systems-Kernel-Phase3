@@ -26,8 +26,9 @@
 #include <stdarg.h>
 #include <unistd.h>
 
-#define PAGES 1
+#define PAGES 10
 #define ITERATIONS 10
+#define PAGERS 3
 
 static char *vmRegion;
 static char *names[] = {"A","B"};
@@ -86,7 +87,7 @@ P4_Startup(void *arg)
     int     numChildren = sizeof(names) / sizeof(char *);
 
     USLOSS_Console("P4_Startup starting.\n");
-    rc = Sys_VmInit(PAGES, PAGES, numChildren * PAGES, 1, (void **) &vmRegion);
+    rc = Sys_VmInit(PAGES, PAGES, numChildren, PAGERS, (void **) &vmRegion);
     if (rc != 0) {
         USLOSS_Console("Sys_VmInit failed: %d\n", rc);
         USLOSS_Halt(1);
