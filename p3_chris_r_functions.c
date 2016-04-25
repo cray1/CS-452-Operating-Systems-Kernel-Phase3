@@ -162,30 +162,29 @@ int Pager(void) {
 
 		DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
+		P1_P(process_sem);
 		P1_P(frame_sem);
 
 		/* Find a free frame */
 		int freeFrameFound = FALSE;
 		int freeFrameId;
 		for (freeFrameId = 0; freeFrameId < numFrames; freeFrameId++) {
-			P1_P(process_sem);
+
 			if (frames_list[freeFrameId].state == UNUSED) {
 				freeFrameFound = TRUE;
 				frames_list[freeFrameId].state = INCORE;
 				frames_list[freeFrameId].page = fault.page;
-				P1_V(process_sem);
 				break;
 			}
-			P1_V(process_sem);
 		}
 
-		P1_V(frame_sem);
+
 
 		int page = fault.page;
 
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
 		if (freeFrameFound != TRUE) {
-			P1_P(frame_sem);
+
 			//find random frame to use (for now)
 			int swapFrameId = 0;
 			while(1){
@@ -225,11 +224,13 @@ int Pager(void) {
 				memcpy(buffer,frameAddr, USLOSS_MmuPageSize());
 
 				//write to disk
-				P2_DiskWrite(0,block,0,Disk_Information[0].numSectorsPerTrack, buffer);
+				P2_DiskWrite(diskUnit,block,0,Disk_Information.numSectorsPerTrack, buffer);
 			}
 			//update swap frame owner's page table to reflect that page is no longer in frame
 
-			P1_V(frame_sem);
+			//zero out old frame
+			set_MMU_PageFrame_To_Zeroes(swapFrameId);
+
 		}
 
 		else {
@@ -237,7 +238,7 @@ int Pager(void) {
 			 * If a free frame is found the page table entry for the faulted process is updated to refer to the free frame
 			 * */
 
-			P1_P(process_sem);
+
 			DebugPrint("Pager: found free frame %d, current PID: %d!\n", freeFrameId, P1_GetPID());
 			processes[fault.pid].pageTable[page].state = INCORE;
 			processes[fault.pid].pageTable[page].frame = freeFrameId; //TODO: 1:1 mapping may not hold true
@@ -281,17 +282,22 @@ int Pager(void) {
 			errorCode = USLOSS_MmuUnmap(TAG,freeFrameId);
 			DebugPrint("Pager: done unmapping page %d , current PID: %d!\n", page, P1_GetPID());
 
-			P1_V(process_sem);
+
 		}
 
 		DebugPrint("Pager: send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
 		/* Unblock waiting (faulting) process */
+		P1_V(frame_sem);
+		P1_V(process_sem);
 
 		P2_MboxSend(fault.mbox, &fault, &size);
 
+
+
 		DebugPrint("Pager: done with send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
-		//P1_V(pager_sem);
+
+
 	}
 	/* Never gets here. */
 	return 1;
