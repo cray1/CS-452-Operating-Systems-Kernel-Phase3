@@ -74,16 +74,25 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	numPages = pages;
 	numFrames = frames;
 
-
 	//initialize frames list
 	frames_list = malloc(sizeof(Frame_Entry) * numFrames);
 	memset(frames_list, 0, sizeof(Frame_Entry) * numFrames);
 
 	int l;
-	for(l=0; l<numFrames; l++){
+	for (l = 0; l < numFrames; l++) {
 		frames_list[l].frameId = -1;
 		frames_list[l].page = -1;
 		frames_list[l].state = UNUSED;
+	}
+
+	//setup disk info
+	int q;
+	for (q = 0; q < USLOSS_MAX_UNITS; q++) {
+		P2_DiskSize(q, &Disk_Information[q].numBytesPerSector,
+				&Disk_Information[q].numSectorsPerTrack,
+				&Disk_Information[q].numTracksPerDisk);
+		Disk_Information[q].unit = q;
+
 	}
 
 	IsVmInitialized = TRUE; //added by cray1
@@ -97,8 +106,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK,
 		P3_PAGER_PRIORITY);
 		P1_P(process_sem);
-		DebugPrint("P3_VmInit:  forked pager with pid %d\n",
-					pagers_pids[i]);
+		DebugPrint("P3_VmInit:  forked pager with pid %d\n", pagers_pids[i]);
 	}
 	P1_V(process_sem);
 	return 0;
@@ -137,8 +145,7 @@ void P3_VmDestroy(void) {
 	int i;
 	for (i = 0; i < num_pagers; i++) {
 		P1_P(process_sem);
-		if(isValidPid(pagers_pids[i]) == TRUE)
-		{
+		if (isValidPid(pagers_pids[i]) == TRUE) {
 			processes[pagers_pids[i]].pager_daemon_marked_to_kill = 1;
 			P1_Kill(pagers_pids[i]);
 		}
@@ -158,11 +165,10 @@ void P3_VmDestroy(void) {
 	P3_vmStats.freeFrames = 0;
 	int l;
 	for (l = 0; l < numFrames; l++) {
-		if(frames_list[l].state == UNUSED){
-			P3_vmStats.freeFrames = P3_vmStats.freeFrames +1;
+		if (frames_list[l].state == UNUSED) {
+			P3_vmStats.freeFrames = P3_vmStats.freeFrames + 1;
 		}
 	}
-
 
 	USLOSS_Console("P3_vmStats:\n");
 	USLOSS_Console("pages: %d\n", P3_vmStats.pages);

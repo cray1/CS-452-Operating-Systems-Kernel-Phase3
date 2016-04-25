@@ -69,6 +69,15 @@ typedef struct Frame_Entry{
 	int page;
 } Frame_Entry;
 
+typedef struct Disk_Info{
+	int unit;
+	int numBytesPerSector;
+	int numSectorsPerTrack;
+	int numTracksPerDisk;
+
+} Disk_Info;
+
+
 extern Process	processes[P1_MAXPROC];
 extern int	numPages;
 extern int	numFrames;
@@ -83,7 +92,7 @@ extern P1_Semaphore process_sem;
 extern P1_Semaphore frame_sem;
 extern int *blockTable;
 extern int lastFrameIndex;
-
+extern Disk_Info  Disk_Information[USLOSS_MAX_UNITS];
 
 /*
  * Everybody uses the same tag.
