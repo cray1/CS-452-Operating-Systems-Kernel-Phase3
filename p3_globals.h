@@ -92,7 +92,8 @@ extern P1_Semaphore process_sem;
 extern P1_Semaphore frame_sem;
 extern int *blockTable;
 extern int lastFrameIndex;
-extern Disk_Info  Disk_Information[USLOSS_MAX_UNITS];
+extern int diskUnit;
+extern Disk_Info  Disk_Information;
 
 /*
  * Everybody uses the same tag.

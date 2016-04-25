@@ -86,14 +86,11 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	}
 
 	//setup disk info
-	int q;
-	for (q = 0; q < USLOSS_MAX_UNITS; q++) {
-		P2_DiskSize(q, &Disk_Information[q].numBytesPerSector,
-				&Disk_Information[q].numSectorsPerTrack,
-				&Disk_Information[q].numTracksPerDisk);
-		Disk_Information[q].unit = q;
+	P2_DiskSize(diskUnit, &Disk_Information.numBytesPerSector,
+			&Disk_Information.numSectorsPerTrack,
+			&Disk_Information.numTracksPerDisk);
+	Disk_Information.unit = diskUnit;
 
-	}
 
 	IsVmInitialized = TRUE; //added by cray1
 	if (enableVerboseDebug == TRUE)

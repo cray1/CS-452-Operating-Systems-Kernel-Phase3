@@ -21,7 +21,9 @@ int pagerMbox = -1;
 int enableVerboseDebug = 0; // will print detailed progress for all functions when set to 1
 
 int IsVmInitialized = FALSE;
-Disk_Info  Disk_Information[USLOSS_MAX_UNITS];
+int diskUnit = 1;
+Disk_Info  Disk_Information;
+
 
 /**
  * Checks for Kernel Mode
