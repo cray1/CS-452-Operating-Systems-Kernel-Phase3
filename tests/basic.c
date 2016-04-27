@@ -16,6 +16,7 @@
  *  and because I'm lazy.
  *
  */
+#define NDEBUG //disable assert
 #include <usyscall.h>
 #include <libuser.h>
 #include <assert.h>
@@ -109,7 +110,7 @@ P4_Startup(void *arg)
 void setup(void) {
     int rc;
     // Create the swap disk.
-    rc = system("../usloss/makedisk/makedisk 1 100");
+    rc = system("~jhh/452-students/usloss/makedisk/makedisk 1 100");
     assert(rc == 0);
 }
 
