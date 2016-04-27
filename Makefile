@@ -88,7 +88,7 @@ ifeq ($(OS), macosx)
 	LDFLAGS += -Wl,-warn_commons -Wl,-fatal_warnings
 else
 	LIBFLAGS = -Wl,--start-group $(LIBS) -Wl,--end-group
-	LDFLAGS +=  -Wl,--warn-common -Wl,--fatal-warnings
+	LDFLAGS +=  -Wl,--warn-common -Wl  #,--fatal-warnings
 endif
 
 %.d: %.c
