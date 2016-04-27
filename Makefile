@@ -45,7 +45,7 @@ VGFLAGS = --track-origins=yes --leak-check=full --max-stackframe=100000
 LIBS = -lphase$(PHASE2_VERSION) -lphase$(PHASE1_VERSION) -lphase3 -lusloss$(USLOSS_VERSION) -luser$(USER_VERSION)
 
 # Change this if you want change which flags are passed to the C compiler.
-CFLAGS += -Wall -Werror -g -DPHASE_3
+CFLAGS += -Wall  -g -DPHASE_3 #-Werror
 CFLAGS += -DDEBUG
 
 # You shouldn't need to change anything below here. 
@@ -88,7 +88,7 @@ ifeq ($(OS), macosx)
 	LDFLAGS += -Wl,-warn_commons -Wl,-fatal_warnings
 else
 	LIBFLAGS = -Wl,--start-group $(LIBS) -Wl,--end-group
-	LDFLAGS +=  -Wl,--warn-common -Wl  #,--fatal-warnings
+	LDFLAGS +=  -Wl,--warn-common -Wl,--fatal-warnings
 endif
 
 %.d: %.c
