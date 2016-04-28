@@ -165,8 +165,8 @@ int Pager(void) {
 
 		DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
-		P1_P(process_sem);
-		P1_P(frame_sem);
+		//P1_P(process_sem);
+		//P1_P(frame_sem);
 
 		/* Find a free frame */
 		int freeFrameFound = FALSE;
@@ -292,8 +292,8 @@ int Pager(void) {
 		DebugPrint("Pager: send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
 		/* Unblock waiting (faulting) process */
-		P1_V(frame_sem);
-		P1_V(process_sem);
+		//P1_V(frame_sem);
+		//P1_V(process_sem);
 
 		P2_MboxSend(fault.mbox, &fault, &size);
 
