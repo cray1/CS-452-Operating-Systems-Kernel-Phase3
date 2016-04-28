@@ -12,13 +12,13 @@ P1_Semaphore frame_sem;
 int *blockTable;
 int lastFrameIndex = 0;
 
-void *vmRegion = NULL;
+void *p3_vmRegion = NULL;
 
 P3_VmStats P3_vmStats;
 
 int pagerMbox = -1;
 
-int enableVerboseDebug = 0; // will print detailed progress for all functions when set to 1
+int enableVerboseDebug = 1; // will print detailed progress for all functions when set to 1
 
 int IsVmInitialized = FALSE;
 int diskUnit = 1;
