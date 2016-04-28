@@ -26,7 +26,7 @@ Disk_Info  Disk_Information;
 
 
 /**
- * Checks for Kernel Mode
+ * Checks for Kernel Mode //
  */
 int InKernelMode() {
 	if ((USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE) == USLOSS_PSR_CURRENT_MODE) {
