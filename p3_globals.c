@@ -18,15 +18,17 @@ P3_VmStats P3_vmStats;
 
 int pagerMbox = -1;
 
-int enableVerboseDebug = 1; // will print detailed progress for all functions when set to 1
+int enableVerboseDebug = 0; // will print detailed progress for all functions when set to 1
 
 int IsVmInitialized = FALSE;
 int diskUnit = 1;
 Disk_Info  Disk_Information;
+trackBlock trackBlockTable[NUMTRACKS];
+int frameArm;
 
 
 /**
- * Checks for Kernel Mode //
+ * Checks for Kernel Mode
  */
 int InKernelMode() {
 	if ((USLOSS_PsrGet() & USLOSS_PSR_CURRENT_MODE) == USLOSS_PSR_CURRENT_MODE) {

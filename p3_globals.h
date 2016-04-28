@@ -28,8 +28,16 @@
 #define TRUE 1
 #define FALSE 0
 
+#define NUMTRACKS 16
+
 #define MUSTBEINKERNELMODE USLOSS_Trace("P2: A Kernel only function was called from user mode! Not running function!\n ");
 extern int enableVerboseDebug;
+typedef struct trackBlock {
+	int page;
+	int pid;
+	int frame;
+	int status;
+} trackBlock;
 
 /* Page Table Entry */
 typedef struct PTE {
@@ -39,6 +47,7 @@ typedef struct PTE {
     /* Add more stuff here */
     int isInMainMemory;
     int isOldPage;
+    int trackBlock;
 } PTE;
 
 /*rr
@@ -67,6 +76,9 @@ typedef struct Frame_Entry{
 	int frameId;
 	int state;
 	int page;
+	int pid;
+	int clean;
+	int referenced;
 } Frame_Entry;
 
 typedef struct Disk_Info{
@@ -94,6 +106,8 @@ extern int *blockTable;
 extern int lastFrameIndex;
 extern int diskUnit;
 extern Disk_Info  Disk_Information;
+extern trackBlock trackBlockTable[NUMTRACKS];
+extern int frameArm;
 
 /*
  * Everybody uses the same tag.
@@ -105,6 +119,7 @@ extern Disk_Info  Disk_Information;
 
 #define UNUSED	0
 #define INCORE	1
+#define USED 2
 /* You'll probably want more states */
 
 #define OPEN -10
