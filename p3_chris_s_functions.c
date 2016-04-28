@@ -206,7 +206,7 @@ void P3_Switch(old, new)
 
 	if (IsVmInitialized == TRUE) { // do nothing if  VM system is uninitialized
 
-		DebugPrint("P3_Switch called, current PID: %d\n", P1_GetPID());
+		DebugPrint("P3_Switch called, OldPid: %d, NewPid: %d, current PID: %d\n",old,new, P1_GetPID());
 
 		int page, pages;
 		int status;
