@@ -16,7 +16,6 @@
  *  and because I'm lazy.
  *
  */
-#define NDEBUG //disable assert
 #include <usyscall.h>
 #include <libuser.h>
 #include <assert.h>
@@ -27,9 +26,8 @@
 #include <stdarg.h>
 #include <unistd.h>
 
-#define PAGES 10
+#define PAGES 1
 #define ITERATIONS 10
-#define PAGERS 3
 
 static char *vmRegion;
 static char *names[] = {"A","B"};
@@ -41,7 +39,7 @@ int debugging = 1;
 int debugging = 0;
 #endif /* DEBUG */
 
-/*static void
+static void
 debug(char *fmt, ...)
 {
     va_list ap;
@@ -50,7 +48,7 @@ debug(char *fmt, ...)
         va_start(ap, fmt);
         USLOSS_VConsole(fmt, ap);
     }
-}*/
+}
 
 
 static int
@@ -88,7 +86,7 @@ P4_Startup(void *arg)
     int     numChildren = sizeof(names) / sizeof(char *);
 
     USLOSS_Console("P4_Startup starting.\n");
-    rc = Sys_VmInit(PAGES, PAGES, numChildren, PAGERS, (void **) &vmRegion);
+    rc = Sys_VmInit(PAGES, PAGES, numChildren * PAGES, 1, (void **) &vmRegion);
     if (rc != 0) {
         USLOSS_Console("Sys_VmInit failed: %d\n", rc);
         USLOSS_Halt(1);
@@ -107,16 +105,9 @@ P4_Startup(void *arg)
     return 0;
 }
 
+
 void setup(void) {
-    int rc;
-    // Create the swap disk.
-    rc = system("~jhh/452-students/usloss/makedisk/makedisk 1 100");
-    assert(rc == 0);
 }
 
 void cleanup(void) {
-    // Delete the swap disk.
-    int rc;
-    rc = unlink("disk1");
-    assert(rc == 0);
 }
