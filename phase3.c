@@ -11,15 +11,10 @@
 #include <string.h>
 #include <p3_globals.h>
 
-
-
-
-
 typedef struct spawn_wrapper {
 	int (*f)(void *);
 	void *arg;
 } spawn_wrapper;
-
 
 int P4_Startup_Spawn_Wrapper(void* arg) {
 	spawn_wrapper *s = malloc(sizeof(spawn_wrapper));
@@ -31,35 +26,26 @@ int P4_Startup_Spawn_Wrapper(void* arg) {
 	return i;
 }
 
-
-
-int P3_Startup(void *arg){
+int P3_Startup(void *arg) {
 	int p4_pid;
 	int status;
 
 	DebugPrint("P3_Startup: called!\n");
 
-
+	// Find stuff out about the disk
+	P2_DiskSize(1, &sector, &track, &disk);
 
 	/*
 	 *  Fork P4_Startup process. Do this after all other setup code.
 	 */
 	//P3_Startup should call Sys_VmDestroy if P4_Startup returns
 	spawn_wrapper *helper = malloc(sizeof(spawn_wrapper));
-			helper->f = P4_Startup;
-			helper->arg = NULL;
-	Sys_Spawn("P4_Startup",&P4_Startup_Spawn_Wrapper, (void *) helper,4 * USLOSS_MIN_STACK,3,&p4_pid);
-	 Sys_Wait(&p4_pid,&status);
-
+	helper->f = P4_Startup;
+	helper->arg = NULL;
+	Sys_Spawn("P4_Startup", &P4_Startup_Spawn_Wrapper, (void *) helper,
+			4 * USLOSS_MIN_STACK, 2, &p4_pid);
+	Sys_Wait(&p4_pid, &status);
+	Sys_Terminate(0);
 	return 0;
 }
-
-
-
-
-
-
-
-
-
 

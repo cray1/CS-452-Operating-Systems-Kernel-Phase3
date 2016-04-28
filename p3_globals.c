@@ -25,6 +25,9 @@ int diskUnit = 1;
 Disk_Info  Disk_Information;
 trackBlock trackBlockTable[NUMTRACKS];
 int frameArm;
+int sector;
+int track;
+int disk;
 
 
 /**

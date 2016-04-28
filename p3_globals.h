@@ -108,6 +108,9 @@ extern int diskUnit;
 extern Disk_Info  Disk_Information;
 extern trackBlock trackBlockTable[NUMTRACKS];
 extern int frameArm;
+extern int sector;
+extern int track;
+extern int disk;
 
 /*
  * Everybody uses the same tag.

@@ -51,6 +51,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	} else if (status != USLOSS_MMU_OK) {
 		return -1;
 	}
+
 	p3_vmRegion = USLOSS_MmuRegion(&tmp);
 	assert(p3_vmRegion != NULL);
 	assert(tmp >= pages);
@@ -58,8 +59,8 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 
 	/* Initialize process table */
 	for (i = 0; i < P1_MAXPROC; i++) {
-		processes[i].numPages = 0;
-		processes[i].pageTable = NULL;
+		processes[i].numPages = pages;
+		//processes[i].pageTable = NULL;
 	}
 
 	/*
@@ -71,18 +72,26 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	memset((char *) &P3_vmStats, 0, sizeof(P3_VmStats));
 	P3_vmStats.pages = pages;
 	P3_vmStats.frames = frames;
+	P3_vmStats.blocks = disk;
+	P3_vmStats.freeFrames = frames;
+	P3_vmStats.freeBlocks = disk;
+	P3_vmStats.switches = 0;
+	P3_vmStats.faults = 0;
+	P3_vmStats.new = 0;
+	P3_vmStats.pageIns = 0;
+	P3_vmStats.pageOuts = 0;
+	P3_vmStats.replaced = 0;
 	numPages = pages;
 	numFrames = frames;
 
 	//initialize frames list
-	frames_list = malloc(sizeof(Frame_Entry) * numFrames);
-	memset(frames_list, 0, sizeof(Frame_Entry) * numFrames);
-
-	int l;
-	for (l = 0; l < numFrames; l++) {
-		frames_list[l].frameId = -1;
-		frames_list[l].page = -1;
-		frames_list[l].state = UNUSED;
+	frames_list = malloc(frames * sizeof(Frame_Entry));
+	for (i = 0; i < frames; i++) {
+		frames_list[i].state = UNUSED;
+		frames_list[i].pid = -1;
+		frames_list[i].page = -1;
+		frames_list[i].referenced = FALSE;
+		frames_list[i].clean = TRUE;
 	}
 
 	//setup disk info
@@ -101,7 +110,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 		sprintf(name, "Pager_%d", i);
 		P1_V(process_sem);
 		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK,
-		P3_PAGER_PRIORITY);
+				P3_PAGER_PRIORITY);
 		P1_P(process_sem);
 		DebugPrint("P3_VmInit:  forked pager with pid %d\n", pagers_pids[i]);
 	}
