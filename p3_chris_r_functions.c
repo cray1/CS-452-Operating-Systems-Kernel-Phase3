@@ -230,7 +230,7 @@ int Pager(void) {
 				char *frameAddr = "Z";
 
 				//copy to buffer and write to disk
-				//memcpy(buffer,frameAddr, USLOSS_MmuPageSize());
+				memcpy(buffer,frameAddr, USLOSS_MmuPageSize());
 
 				USLOSS_Trace("\tPager: swapFrameId %d, writing to disk  , current PID: %d!\n",swapFrameId, P1_GetPID());
 				//write to disk
