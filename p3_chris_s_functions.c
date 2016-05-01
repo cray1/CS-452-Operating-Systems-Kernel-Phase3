@@ -24,6 +24,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	int i;
 	int tmp;
 
+
 	DebugPrint("P3_VmInit called, current PID: %d\n", P1_GetPID());
 	CheckMode();
 	process_sem = P1_SemCreate(1);
@@ -244,6 +245,7 @@ void P3_Switch(old, new)
 		P1_P(process_sem);
 		pages = processes[new].numPages;
 		P1_V(process_sem);
+		DebugPrint("P3_Switch: mapping new process OldPid: %d, NewPid: %d, current PID: %d\n",old,new, P1_GetPID());
 
 		if (processes[new].pageTable != NULL) {
 			for (page = 0; page < pages; page++) {
@@ -253,6 +255,7 @@ void P3_Switch(old, new)
 				 */
 				P1_P(process_sem);
 				if (processes[new].pageTable[page].state == INCORE) {
+
 					assert(processes[new].pageTable[page].frame != -1);
 					USLOSS_MmuUnmap(TAG, page);
 					status = USLOSS_MmuMap(TAG, page,

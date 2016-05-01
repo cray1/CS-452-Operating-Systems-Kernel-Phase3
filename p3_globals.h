@@ -67,6 +67,7 @@ typedef struct Frame_Entry{
 	int frameId;
 	int state;
 	int page;
+	int pid;
 } Frame_Entry;
 
 typedef struct Disk_Info{
@@ -106,6 +107,7 @@ extern Disk_Info  Disk_Information;
 #define UNUSED	0
 #define INCORE	1
 /* You'll probably want more states */
+#define ONDISK 2
 
 #define OPEN -10
 #define CLOSED 10

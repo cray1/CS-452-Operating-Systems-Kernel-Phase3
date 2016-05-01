@@ -18,7 +18,7 @@ P3_VmStats P3_vmStats;
 
 int pagerMbox = -1;
 
-int enableVerboseDebug = 1; // will print detailed progress for all functions when set to 1
+int enableVerboseDebug = 0; // will print detailed progress for all functions when set to 1
 
 int IsVmInitialized = FALSE;
 int diskUnit = 1;
