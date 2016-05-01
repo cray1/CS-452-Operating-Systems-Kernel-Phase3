@@ -39,7 +39,7 @@ int debugging = 1;
 int debugging = 0;
 #endif /* DEBUG */
 
-/*static void
+static void
 debug(char *fmt, ...)
 {
     va_list ap;
@@ -48,7 +48,7 @@ debug(char *fmt, ...)
         va_start(ap, fmt);
         USLOSS_VConsole(fmt, ap);
     }
-}*/
+}
 
 
 static int
@@ -105,16 +105,9 @@ P4_Startup(void *arg)
     return 0;
 }
 
+
 void setup(void) {
-    //int rc;
-    // Create the swap disk.
-    //rc = system("../usloss/makedisk/makedisk 1 100");
-    //assert(rc == 0);
 }
 
 void cleanup(void) {
-    // Delete the swap disk.
-    //int rc;
-    //rc = unlink("disk1");
-    //assert(rc == 0);
 }

@@ -1,9 +1,12 @@
 /*
- * Zero.c
- *
- *  Zero test case for Phase 3 milestone. It creates two processes, "A" and "B".
- *  Each process has two pages and there are four frames so that all pages fit in memory.
- *  Each process verifies that its pages are zero-filled.
+ * paging.c
+ *  
+ *  Basic test case for Phase 3. It creates two processes, "A" and "B". 
+ *  Each process has four pages and there are four frames so pages will have to be 
+ *  paged to and from the disk.
+ *  Each process writes its name into the first byte of each of its pages, sleeps for one
+ *  second (to give the other process time to run), then verifies that the first byte
+ *  of each page is correct. It then iterates a fixed number of times.
  *
  *  You can change the number of pages and iterations by changing the macros below. You
  *  can add more processes by adding more names to the "names" array, e.g. "C". The
@@ -24,8 +27,12 @@
 #include <stdarg.h>
 #include <unistd.h>
 
-#define PAGES 2
-#define ITERATIONS 10
+#define CHILDREN (sizeof(names) / sizeof(char *))
+#define PAGES 4 // # of pages per child
+#define FRAMES (CHILDREN * 2) // Twice as many frames as processes
+#define PRIORITY 3
+#define ITERATIONS 100
+#define PAGERS 2
 
 static char *vmRegion;
 static char *names[] = {"A","B"};
@@ -52,19 +59,26 @@ debug(char *fmt, ...)
 static int
 Child(void *arg)
 {
-    char    *name = (char *) arg;
-    int     i,j,k;
-    char    *page;
+    volatile char *name = (char *) arg;
+    int     i,j;
+    char    *addr;
+    int     tod;
 
     USLOSS_Console("Child \"%s\" starting.\n", name);
     for (i = 0; i < ITERATIONS; i++) {
         for (j = 0; j < PAGES; j++) {
-            page = (char *) (vmRegion + j * pageSize);
-            for (k = 0; k < pageSize; k++) {
-                assert(page[k] == '\0');
-            }
+            addr = vmRegion + j * pageSize;
+            Sys_GetTimeofDay(&tod);
+            USLOSS_Console("%f: Child \"%s\" writing to page %d @ %p\n", tod / 1000000.0, name, j, addr);
+            *addr = *name;
         }
         Sys_Sleep(1);
+        for (j = 0; j < PAGES; j++) {
+            addr = vmRegion + j * pageSize;
+            Sys_GetTimeofDay(&tod);
+            USLOSS_Console("%f: Child \"%s\" reading from page %d @ %p\n", tod / 1000000.0, name, j, addr);
+            assert(*addr == *name);
+        }
     }
     USLOSS_Console("Child \"%s\" done.\n", name);
     return 0;
@@ -78,20 +92,19 @@ P4_Startup(void *arg)
     int     rc;
     int     pid;
     int     child;
-    int     numChildren = sizeof(names) / sizeof(char *);
 
     USLOSS_Console("P4_Startup starting.\n");
-    rc = Sys_VmInit(PAGES, PAGES, numChildren * PAGES, 1, (void **) &vmRegion);
+    rc = Sys_VmInit(PAGES, PAGES, FRAMES, PAGERS, (void **) &vmRegion);
     if (rc != 0) {
         USLOSS_Console("Sys_VmInit failed: %d\n", rc);
         USLOSS_Halt(1);
     }
     pageSize = USLOSS_MmuPageSize();
-    for (i = 0; i < numChildren; i++) {
-        rc = Sys_Spawn(names[i], Child, (void *) names[i], USLOSS_MIN_STACK * 2, 2, &pid);
+    for (i = 0; i < CHILDREN; i++) {
+        rc = Sys_Spawn(names[i], Child, (void *) names[i], USLOSS_MIN_STACK * 2, PRIORITY, &pid);
         assert(rc == 0);
     }
-    for (i = 0; i < numChildren; i++) {
+    for (i = 0; i < CHILDREN; i++) {
         rc = Sys_Wait(&pid, &child);
         assert(rc == 0);
     }
@@ -99,6 +112,7 @@ P4_Startup(void *arg)
     USLOSS_Console("P4_Startup done.\n");
     return 0;
 }
+
 
 void setup(void) {
 }

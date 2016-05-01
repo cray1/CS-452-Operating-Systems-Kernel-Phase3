@@ -72,8 +72,12 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	numPages = pages;
 	numFrames = frames;
 
-	frames_list = malloc(sizeof(int) * numFrames);
-	memset(frames_list, 0, sizeof(int) * numFrames);
+	frames_list = malloc(sizeof(Frame) * numFrames);
+	for(i = 0; i < numFrames; i++){
+		frames_list[i].used = 0;
+		frames_list[i].page = -1;
+		frames_list[i].process = -1;
+	}
 
 	IsVmInitialized = TRUE; //added by cray1
 	if (enableVerboseDebug == TRUE)
@@ -148,7 +152,7 @@ void P3_VmDestroy(void) {
 	P3_vmStats.freeFrames = 0;
 	int l;
 	for (l = 0; l < numFrames; l++) {
-		if(frames_list[l] == UNUSED){
+		if(frames_list[l].used == UNUSED){
 			P3_vmStats.freeFrames = P3_vmStats.freeFrames +1;
 		}
 	}
@@ -251,6 +255,7 @@ void P3_Switch(old, new)
 						Print_MMU_Error_Code(status);
 						USLOSS_Halt(1);
 					}
+					processes[new].pageTable[page].clock = 1;
 				}
 				P1_V(process_sem);
 			}
@@ -294,6 +299,8 @@ void P3_Fork(pid)
 			processes[pid].pageTable[i].frame = -1;
 			processes[pid].pageTable[i].block = -1;
 			processes[pid].pageTable[i].state = UNUSED;
+			processes[pid].pageTable[i].clock = 0;
+			processes[pid].pageTable[i].init = FALSE;
 		}
 		P1_V(process_sem);
 	} else {

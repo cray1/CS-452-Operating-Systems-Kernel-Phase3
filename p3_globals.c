@@ -9,8 +9,9 @@ int	numFrames = 0;
 int *pagers_pids;
 int num_pagers = 0;
 P1_Semaphore process_sem;
-int *frames_list;
+Frame *frames_list;
 P1_Semaphore pager_sem;
+int nextDiskBlock = 0;
 
 
 void	*vmRegion = NULL;

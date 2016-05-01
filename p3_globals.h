@@ -37,6 +37,8 @@ typedef struct PTE {
     int		frame;		/* The frame that stores the page. */
     int		block;		/* The disk block that stores the page. */
     /* Add more stuff here */
+	int 	clock; 		/* references in clock algorithm */
+	int 	init;
 } PTE;
 
 /*rr
@@ -47,7 +49,7 @@ typedef struct Process {
     PTE		*pageTable;	/* The page table for the process. */
     /* Add more stuff here if necessary. */
 	int 	has_pages;
-	int pager_daemon_marked_to_kill;
+	int 	pager_daemon_marked_to_kill;
 } Process;
 
 /*
@@ -61,6 +63,12 @@ typedef struct Fault {
 	int page;
 } Fault;
 
+typedef struct Frame {
+	int used;
+	int page;
+	int process;
+} Frame;
+
 extern Process	processes[P1_MAXPROC];
 extern int	numPages;
 extern int	numFrames;
@@ -70,9 +78,10 @@ extern void	*vmRegion;
 extern P3_VmStats	P3_vmStats;
 extern int pagerMbox;
 extern int IsVmInitialized;
-extern int *frames_list;
+extern Frame *frames_list;
 extern P1_Semaphore process_sem;
 extern P1_Semaphore pager_sem;
+extern int nextDiskBlock;
 
 /*
  * Everybody uses the same tag.
