@@ -45,7 +45,7 @@ VGFLAGS = --track-origins=yes --leak-check=full --max-stackframe=100000
 LIBS = -lphase$(PHASE2_VERSION) -lphase$(PHASE1_VERSION) -lphase3 -lusloss$(USLOSS_VERSION) -luser$(USER_VERSION)
 
 # Change this if you want change which flags are passed to the C compiler.
-CFLAGS += -Wall -Werror -g -DPHASE_3
+CFLAGS += -Wall -g -DPHASE_3  #-Werror
 CFLAGS += -DDEBUG
 
 # You shouldn't need to change anything below here. 

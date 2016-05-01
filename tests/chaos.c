@@ -142,7 +142,7 @@ void setup(void) {
     int     tracks;
     char    cmd[100];
     tracks = (PAGES * CHILDREN * USLOSS_MmuPageSize() / USLOSS_DISK_SECTOR_SIZE / USLOSS_DISK_TRACK_SIZE) + 1;
-    snprintf(cmd, sizeof(cmd), "makedisk 1 %d", tracks);
+    snprintf(cmd, sizeof(cmd), "~jhh/452-students/usloss/makedisk/makedisk 1 %d", tracks);
     rc = system(cmd);
     assert(rc == 0);
 }
