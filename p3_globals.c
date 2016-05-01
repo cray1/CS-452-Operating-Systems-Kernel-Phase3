@@ -14,7 +14,7 @@ P1_Semaphore pager_sem;
 int nextDiskBlock = 0;
 
 
-void	*vmRegion = NULL;
+void	*p3_vmRegion = NULL;
 
 P3_VmStats	P3_vmStats;
 

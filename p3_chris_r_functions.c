@@ -224,7 +224,7 @@ int Pager(void) {
 							}
 							
 							void *buffer = malloc(USLOSS_MmuPageSize());
-							int *frameAddr = vmRegion + (freeFrameId * USLOSS_MmuPageSize());
+							int *frameAddr = p3_vmRegion + (freeFrameId * USLOSS_MmuPageSize());
 							
 							memcpy(buffer, frameAddr, USLOSS_MmuPageSize());
 							P2_DiskWrite(unit, processes[frames_list[p].process].pageTable[frames_list[p].page].block, 0, track, buffer);
@@ -232,7 +232,7 @@ int Pager(void) {
 						}		
 
 						//zero the page
-						int *pageAddr = vmRegion + (frames_list[p].page * USLOSS_MmuPageSize());
+						int *pageAddr = p3_vmRegion + (frames_list[p].page * USLOSS_MmuPageSize());
 						memset(pageAddr, 0, USLOSS_MmuPageSize());
 						USLOSS_MmuSetAccess(freeFrameId, 0);
 
@@ -270,7 +270,7 @@ int Pager(void) {
 				USLOSS_Halt(1);
 			}
 			
-			void *writeAddr = vmRegion + (page * USLOSS_MmuPageSize());
+			void *writeAddr = p3_vmRegion + (page * USLOSS_MmuPageSize());
 			
 			memcpy(writeAddr, buffer, USLOSS_MmuPageSize());
 			free(buffer);
@@ -290,7 +290,7 @@ int Pager(void) {
                 USLOSS_Halt(1);
             }
 			
-            void *writeAddr = vmRegion + (USLOSS_MmuPageSize() * page);
+            void *writeAddr = p3_vmRegion + (USLOSS_MmuPageSize() * page);
 
             memset(writeAddr, 0, USLOSS_MmuPageSize());
             USLOSS_MmuSetAccess(freeFrameId, 0);

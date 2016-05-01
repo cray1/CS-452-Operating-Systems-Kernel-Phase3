@@ -81,8 +81,8 @@ int starter_P3_VmInit(int mappings, int pages, int frames, int pagers) {
 				status);
 		USLOSS_Halt(1);
 	}
-	vmRegion = USLOSS_MmuRegion(&tmp);
-	assert(vmRegion != NULL);
+	p3_vmRegion = USLOSS_MmuRegion(&tmp);
+	assert(p3_vmRegion != NULL);
 	assert(tmp >= pages);
 	USLOSS_IntVec[USLOSS_MMU_INT] = FaultHandler;
 	for (i = 0; i < P1_MAXPROC; i++) {

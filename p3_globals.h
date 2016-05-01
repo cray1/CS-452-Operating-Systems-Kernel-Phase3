@@ -74,7 +74,7 @@ extern int	numPages;
 extern int	numFrames;
 extern int *pagers_pids;
 extern int num_pagers;
-extern void	*vmRegion;
+extern void	*p3_vmRegion;
 extern P3_VmStats	P3_vmStats;
 extern int pagerMbox;
 extern int IsVmInitialized;
