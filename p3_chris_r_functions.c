@@ -1,5 +1,16 @@
 #include "p3_globals.h"
 
+
+int isFrameDirty(int frameId){
+	int accessPtr;
+	USLOSS_MmuGetAccess(frameId, &accessPtr);
+	int dirty = accessPtr & USLOSS_MMU_DIRTY;
+	if(dirty == USLOSS_MMU_DIRTY){
+		return TRUE;
+	}
+	return FALSE;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -182,11 +193,44 @@ int Pager(void) {
 		}
 		else{
 			//use clock algorithm to find best frame to use
+			//find random frame to use (for now)
+			int swapFrameId = 0; //zero for now
+			int swapPage = frames_list[swapFrameId].page;
+			int swapPid = frames_list[swapFrameId].pid;
 
 			//if swap frame is dirty
-				//write swap frame's page to swap disk
-			//update swap frame owning process's page table entry for its page to reflect page no longer being in frame
+			if(isFrameDirty(swapFrameId) == TRUE){
+				//write swap frame to swap disk
+				// get diskBlock to write to
+				int swapBlock = processes[swapPid].pageTable[swapPage].block;
+				if(swapBlock <0){
+					//get new block
+					swapBlock = nextBlock;
+					nextBlock++;
+					processes[swapPid].pageTable[swapPage].block = swapBlock;
+				}
 
+				//create buffer to store page
+				void *buffer = malloc(USLOSS_MmuPageSize());
+
+				//frame address
+				void  *frameAddr =  p3_vmRegion + (swapPage * USLOSS_MmuPageSize());
+
+				//copy to buffer and write to disk
+				memcpy(buffer,frameAddr, USLOSS_MmuPageSize());
+
+				//write to disk
+				P2_DiskWrite(diskUnit,processes[swapPid].pageTable[swapPage].block,0,Disk_Information.numSectorsPerTrack,buffer);
+
+				free(buffer);
+			}
+
+
+			//update swap frame owning process's page table entry for its page to reflect page no longer being in frame
+			processes[swapPid].pageTable[swapPage].frame = -1;
+			processes[swapPid].pageTable[swapPage].state = ONDISK;
+
+			frame = swapFrameId;
 		}
 
 
@@ -201,15 +245,27 @@ int Pager(void) {
 			USLOSS_Halt(1);
 		}
 
+		int block = processes[fault.pid].pageTable[page].block;
 		//if new page
-		if(	processes[fault.pid].pageTable[page].block <0){
+		if(block <0){
 			//fill with zeros
 			set_MMU_PageFrame_To_Zeroes(page);
 			USLOSS_MmuSetAccess(freeFrameId,USLOSS_MMU_PROT_RW);
 		}
-		else{
-			//read page from disk into frame
+		else{ //load from disk
 
+			//read page from disk into frame
+			char *buf = malloc(USLOSS_MmuPageSize());
+			P2_DiskRead(diskUnit,block,0,Disk_Information.numSectorsPerTrack , buf);
+
+			// calculate where in the P3_vmRegion to write
+			void *destination = p3_vmRegion + (USLOSS_MmuPageSize() * page);
+
+			// copy contents of buffer to the frame
+			memcpy(destination, buf, USLOSS_MmuPageSize());
+
+			// free buffer
+			free(buf);
 		}
 		//unmap from this process so that P3_Switch can map it
 		USLOSS_MmuUnmap(TAG,page);
