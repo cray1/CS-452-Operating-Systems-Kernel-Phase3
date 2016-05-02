@@ -210,6 +210,7 @@ int Pager(void) {
 
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
 		if (freeFrameFound == TRUE) {
+			DebugPrint("Pager: free Frame found: %d, current PID: %d!\n", freeFrameId, P1_GetPID());
 			frame = freeFrameId;
 		}
 		else{
@@ -222,14 +223,19 @@ int Pager(void) {
 
 			//if swap frame is dirty
 			if(isFrameDirty(swapFrameId) == TRUE){
+				DebugPrint("Pager: swapFrame [%d] is dirty, current PID: %d!\n", freeFrameId, P1_GetPID());
 				//write swap frame to swap disk
 				// get diskBlock to write to
 				int swapBlock = processes[swapPid].pageTable[swapPage].block;
+				DebugPrint("Pager: swapBlock [%d], current PID: %d!\n", swapBlock, P1_GetPID());
 				if(swapBlock <0){
 					//get new block
+					DebugPrint("Pager: swapBlock [%d] is -1, getting new block, current PID: %d!\n", swapBlock, P1_GetPID());
 					swapBlock = nextBlock;
 					nextBlock++;
 					processes[swapPid].pageTable[swapPage].block = swapBlock;
+					DebugPrint("Pager: swapBlock assigned [%d], current PID: %d!\n", swapBlock, P1_GetPID());
+
 				}
 
 				//create buffer to store page
@@ -241,8 +247,13 @@ int Pager(void) {
 				//copy to buffer and write to disk
 				memcpy(buffer,frameAddr, USLOSS_MmuPageSize());
 
+				DebugPrint("Pager: writing to disk, current PID: %d!\n",  P1_GetPID());
+
 				//write to disk
 				P2_DiskWrite(unit,processes[swapPid].pageTable[swapPage].block,0,sector,buffer);
+
+				DebugPrint("Pager: done writing to disk, current PID: %d!\n", P1_GetPID());
+
 
 				free(buffer);
 			}
