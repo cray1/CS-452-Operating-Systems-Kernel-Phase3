@@ -213,6 +213,7 @@ int Pager(void) {
 			frame = freeFrameId;
 		}
 		else{
+			P1_P(process_sem);
 			//use clock algorithm to find best frame to use
 			//find random frame to use (for now)
 			int swapFrameId = 0; //zero for now
@@ -246,10 +247,10 @@ int Pager(void) {
 				free(buffer);
 			}
 
-
 			//update swap frame owning process's page table entry for its page to reflect page no longer being in frame
 			processes[swapPid].pageTable[swapPage].frame = -1;
 			processes[swapPid].pageTable[swapPage].state = ONDISK;
+			P1_V(process_sem);
 
 			frame = swapFrameId;
 		}
@@ -264,7 +265,7 @@ int Pager(void) {
 			USLOSS_Halt(1);
 		}
 		//update faulting process's page table entry to map page to frame
-		
+		P1_P(process_sem);
 		processes[fault.pid].pageTable[page].frame = frame;
 		processes[fault.pid].pageTable[page].state = INCORE;
 
@@ -277,6 +278,8 @@ int Pager(void) {
 		frames_list[frame].pid = fault.pid;
 
 		int block = processes[fault.pid].pageTable[page].block;
+
+		P1_V(process_sem);
 		//if new page
 		if(block <0){
 			//fill with zeros
