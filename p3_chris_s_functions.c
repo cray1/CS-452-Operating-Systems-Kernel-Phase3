@@ -221,12 +221,12 @@ void P3_Switch(old, new)
 				if (processes[old].pageTable[page].state == INCORE) {
 					assert(processes[old].pageTable[page].frame != -1);
 					status = USLOSS_MmuUnmap(0, page);
-					if (status != USLOSS_MMU_OK) {
+					/*if (status != USLOSS_MMU_OK) {
 						// report error and abort
 						USLOSS_Console("P3_Switch: ");
 						Print_MMU_Error_Code(status);
 						USLOSS_Halt(1);
-					}
+					} */
 				}
 				P1_V(process_sem);
 			}
