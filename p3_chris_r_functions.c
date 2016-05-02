@@ -20,11 +20,11 @@
 void P3_Quit(pid)
 	int pid; {
 
-	DebugPrint("P3_Quit called, current PID: %d, %d\n", P1_GetPID(), pid);
+	/*DebugPrint("P3_Quit called, current PID: %d, %d\n", P1_GetPID(), pid);
 	DebugPrint("=============================================P3_Quit\n");
 	P1_DumpProcesses();
 	DebugPrint("=============================================P3_Quit\n");
-	
+	*/
 	P1_P(process_sem);
 	if (IsVmInitialized == TRUE && processes[pid].numPages > 0 && processes[pid].pageTable != NULL ) { // do nothing if  VM system is uninitialized
 
@@ -55,7 +55,6 @@ void P3_Quit(pid)
 		processes[pid].numPages = 0;
 		processes[pid].pageTable = NULL;
 	}
-
 	P1_V(process_sem);
 }
 
@@ -173,7 +172,6 @@ int Pager(void) {
 		DebugPrint( "Pager waiting to receive on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 		P2_MboxReceive(pagerMbox, (void *) &fault, &size);
 			
-		USLOSS_Console("hello world\n");
 		if(fault.pid == -1 || processes[P1_GetPID()].pager_daemon_marked_to_kill == TRUE){
 			P1_Quit(0);
 		}
@@ -207,6 +205,7 @@ int Pager(void) {
 		USLOSS_MmuUnmap(TAG,page);
 
 		int frame = 0;
+		
 
 		/* If there isn't one run clock algorithm, write page to disk if necessary */
 		if (freeFrameFound == TRUE) {
@@ -220,33 +219,57 @@ int Pager(void) {
 			int swapFrameId = 0; //zero for now
 			int swapPage = frames_list[swapFrameId].page;
 			int swapPid = frames_list[swapFrameId].pid;
+			
+			P1_V(process_sem);
+			
+			
 
 			//if swap frame is dirty
 			if(isFrameDirty(swapFrameId) == TRUE){
+				
+				
 				DebugPrint("Pager: swapFrame [%d] is dirty, current PID: %d!\n", freeFrameId, P1_GetPID());
 				//write swap frame to swap disk
 				// get diskBlock to write to
+								//map page to frame in order to load it into memory
+				int mmuResult = USLOSS_MmuMap(TAG, swapPage, swapFrameId, USLOSS_MMU_PROT_RW);
+				if(mmuResult != USLOSS_MMU_OK){
+					//report error, abort
+					Print_MMU_Error_Code(mmuResult);
+					USLOSS_Trace("Pager with pid %d received an MMU error! Halting!\n",P1_GetPID());
+					P1_DumpProcesses();
+					USLOSS_Halt(1);
+				}
+				
+				P1_P(process_sem);
+				processes[P1_GetPID()].pageTable[swapPage].frame = swapFrameId;
+				processes[P1_GetPID()].pageTable[swapPage].state = INCORE;
 				int swapBlock = processes[swapPid].pageTable[swapPage].block;
+				P1_V(process_sem);
+				
 				DebugPrint("Pager: swapBlock [%d], current PID: %d!\n", swapBlock, P1_GetPID());
 				if(swapBlock <0){
 					//get new block
-					DebugPrint("Pager: swapBlock [%d] is -1, getting new block, current PID: %d!\n", swapBlock, P1_GetPID());
+					DebugPrint("Pager: swapBlock [%d] is -1, getting new block, current PID: %d!\n", swapBlock, P1_GetPID());								
+					P1_P(process_sem);
 					swapBlock = nextBlock;
 					nextBlock++;
 					processes[swapPid].pageTable[swapPage].block = swapBlock;
-					DebugPrint("Pager: swapBlock assigned [%d], current PID: %d!\n", swapBlock, P1_GetPID());
-
+					DebugPrint("Pager: swapBlock assigned [%d], current PID: %d!\n", swapBlock, P1_GetPID());								
+					P1_V(process_sem);
 				}
 
 				//create buffer to store page
 				void *buffer = malloc(USLOSS_MmuPageSize());
 
+				DebugPrint("One\n");
 				//frame address
 				void  *frameAddr =  p3_vmRegion + (swapPage * USLOSS_MmuPageSize());
 
+				DebugPrint("two\n");
+				
 				//copy to buffer and write to disk
-				memcpy(buffer,frameAddr, USLOSS_MmuPageSize());
-
+				memcpy(buffer, frameAddr, USLOSS_MmuPageSize());
 				DebugPrint("Pager: writing to disk, current PID: %d!\n",  P1_GetPID());
 
 				//write to disk
@@ -256,8 +279,16 @@ int Pager(void) {
 
 
 				free(buffer);
+				
+				USLOSS_MmuUnmap(TAG,swapPage);
+				
+				P1_P(process_sem);
+				processes[P1_GetPID()].pageTable[swapPage].frame = -1;
+				processes[P1_GetPID()].pageTable[swapPage].state = UNUSED;
+				P1_V(process_sem);
 			}
-
+			
+			P1_P(process_sem);
 			//update swap frame owning process's page table entry for its page to reflect page no longer being in frame
 			processes[swapPid].pageTable[swapPage].frame = -1;
 			processes[swapPid].pageTable[swapPage].state = ONDISK;
@@ -265,7 +296,7 @@ int Pager(void) {
 
 			frame = swapFrameId;
 		}
-
+		
 		//map page to frame in order to load it into memory
 		int mmuResult = USLOSS_MmuMap(TAG, page, frame, USLOSS_MMU_PROT_RW);
 		if(mmuResult != USLOSS_MMU_OK){
@@ -275,6 +306,7 @@ int Pager(void) {
 			P1_DumpProcesses();
 			USLOSS_Halt(1);
 		}
+
 		//update faulting process's page table entry to map page to frame
 		P1_P(process_sem);
 		processes[fault.pid].pageTable[page].frame = frame;
@@ -295,7 +327,7 @@ int Pager(void) {
 		if(block <0){
 			//fill with zeros
 			set_MMU_PageFrame_To_Zeroes(page);
-			USLOSS_MmuSetAccess(freeFrameId,USLOSS_MMU_PROT_RW);
+			USLOSS_MmuSetAccess(frame,USLOSS_MMU_PROT_RW);
 		}
 		else{ //load from disk
 
@@ -311,9 +343,15 @@ int Pager(void) {
 
 			// free buffer
 			free(buf);
+			
+			processes[fault.pid].pageTable[page].block = -1;
 		}
 		//unmap from this process so that P3_Switch can map it
 		USLOSS_MmuUnmap(TAG,page);
+		P1_P(process_sem);
+		processes[P1_GetPID()].pageTable[page].frame = -1;
+		processes[P1_GetPID()].pageTable[page].state = UNUSED;
+		P1_V(process_sem);
 		
 		DebugPrint("Pager: send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 

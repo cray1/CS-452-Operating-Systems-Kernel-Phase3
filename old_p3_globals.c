@@ -152,10 +152,10 @@ void Print_MMU_Error_Code(int error){
 }
 
 
-char *get_MMU_PageFrame_Address(int pageNum) {
+int *get_MMU_PageFrame_Address(int pageNum) {
 	int pageSize = USLOSS_MmuPageSize();
 	int numPages;
-	char *addr = USLOSS_MmuRegion(&numPages);
+	int *addr = USLOSS_MmuRegion(&numPages);
 	return addr + pageNum * pageSize;
 }
 
