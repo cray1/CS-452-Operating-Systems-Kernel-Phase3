@@ -119,7 +119,7 @@ int Pager_Wrapper(void *arg) {
  */
 void P3_VmDestroy(void) {
 
-	DebugPrint("P3_VmDestroy called, current PID: %d\n", P1_GetPID());
+	USLOSS_Console("P3_VmDestroy called, current PID: %d\n", P1_GetPID());
 	CheckMode();
 	int result = USLOSS_MmuDone();
 	if (result == USLOSS_MMU_ERR_OFF) {

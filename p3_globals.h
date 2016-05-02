@@ -67,6 +67,7 @@ typedef struct Frame {
 	int used;
 	int page;
 	int process;
+	int pid;
 } Frame;
 
 extern Process	processes[P1_MAXPROC];
@@ -94,6 +95,7 @@ extern int nextDiskBlock;
 #define UNUSED	0
 #define INCORE	1
 /* You'll probably want more states */
+#define ONDISK 2
 
 
 void DebugPrint(char *fmt, ...);
