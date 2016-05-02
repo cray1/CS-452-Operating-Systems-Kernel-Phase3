@@ -19,7 +19,7 @@
 #define PAGES       4 // # of pages per child
 #define FRAMES      (CHILDREN * 2)
 #define PRIORITY    3
-#define ITERATIONS  100
+#define ITERATIONS  11
 #define PAGERS      2
 
 char    *fmt = "** Child %d, page %d";
