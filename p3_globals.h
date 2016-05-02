@@ -96,6 +96,7 @@ extern int nextDiskBlock;
 #define INCORE	1
 /* You'll probably want more states */
 #define ONDISK 2
+#define INUSE 3
 
 
 void DebugPrint(char *fmt, ...);

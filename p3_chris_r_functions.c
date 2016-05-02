@@ -190,7 +190,7 @@ int Pager(void) {
 			P1_P(process_sem);
 			if (frames_list[freeFrameId].used == UNUSED) {
 				freeFrameFound = TRUE;
-				frames_list[freeFrameId].used = 1;
+				frames_list[freeFrameId].used = INUSE;
 				frames_list[freeFrameId].process = fault.pid;
 				frames_list[freeFrameId].page = fault.page;
 				P1_V(process_sem);
@@ -220,14 +220,18 @@ int Pager(void) {
 			
 			
 			P1_P(process_sem);
-			while(processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock != UNUSED){  
-				processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock = UNUSED;
+			while(processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock != UNUSED){
+				if(frames_list[swapFrameId].used != INUSE){
+					processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock = UNUSED;
+				}
 				swapFrameId++;
 				swapFrameId = swapFrameId%numFrames;
 			}
 			
 			int swapPage = frames_list[swapFrameId].page;
 			int swapPid = frames_list[swapFrameId].pid;
+			
+			frames_list[swapFrameId].used = INUSE;
 			
 			P1_V(process_sem);
 
@@ -249,6 +253,7 @@ int Pager(void) {
 				}
 				
 				P1_P(process_sem);
+				P3_vmStats.pageOuts++;
 				processes[P1_GetPID()].pageTable[swapPage].frame = swapFrameId;
 				processes[P1_GetPID()].pageTable[swapPage].state = INCORE;
 				int swapBlock = processes[swapPid].pageTable[swapPage].block;
@@ -269,18 +274,16 @@ int Pager(void) {
 				//create buffer to store page
 				void *buffer = malloc(USLOSS_MmuPageSize());
 
-				DebugPrint("One\n");
 				//frame address
 				void  *frameAddr =  p3_vmRegion + (swapPage * USLOSS_MmuPageSize());
 
-				DebugPrint("two\n");
 				
 				//copy to buffer and write to disk
 				memcpy(buffer, frameAddr, USLOSS_MmuPageSize());
 				DebugPrint("Pager: writing to disk, current PID: %d!\n",  P1_GetPID());
 
 				//write to disk
-				P2_DiskWrite(unit,processes[swapPid].pageTable[swapPage].block,0,sector,buffer);
+				P2_DiskWrite(unit,processes[swapPid].pageTable[swapPage].block,0,track,buffer);
 
 				DebugPrint("Pager: done writing to disk, current PID: %d!\n", P1_GetPID());
 
@@ -302,6 +305,8 @@ int Pager(void) {
 			P1_V(process_sem);
 
 			frame = swapFrameId;
+			swapFrameId++;
+			swapFrameId = swapFrameId%numFrames;
 		}
 		
 		//map page to frame in order to load it into memory
@@ -335,28 +340,40 @@ int Pager(void) {
 		set_MMU_PageFrame_To_Zeroes(page);
 		USLOSS_MmuSetAccess(frame,USLOSS_MMU_PROT_RW);
 		
-		if(block > 0){ //load from disk
+		if(block >= 0){ //load from disk
 
 			//read page from disk into frame
 			char *buf = malloc(USLOSS_MmuPageSize());
-			P2_DiskRead(unit,block,0,sector, buf);
-
+			
+			P2_DiskRead(unit,block,0,track, buf);
 			// calculate where in the P3_vmRegion to write
+			P1_P(process_sem);
+			
 			void *destination = p3_vmRegion + (USLOSS_MmuPageSize() * page);
-
+			
 			// copy contents of buffer to the frame
+			P3_vmStats.pageIns++;
 			memcpy(destination, buf, USLOSS_MmuPageSize());
-
+			P1_V(process_sem);
+			
 			// free buffer
 			free(buf);
 			
-			//processes[fault.pid].pageTable[page].block = -1;
+			processes[fault.pid].pageTable[page].block = -1;
 		}
 		//unmap from this process so that P3_Switch can map it
 		USLOSS_MmuUnmap(TAG,page);
 		P1_P(process_sem);
+		
+		if(processes[fault.pid].pageTable[page].init == FALSE){
+			processes[fault.pid].pageTable[page].init = TRUE;
+			P3_vmStats.new++;
+		}
+		
 		processes[P1_GetPID()].pageTable[page].frame = -1;
 		processes[P1_GetPID()].pageTable[page].state = UNUSED;
+		
+		frames_list[frame].used = INCORE;
 		P1_V(process_sem);
 		
 		DebugPrint("Pager: send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
