@@ -162,6 +162,7 @@ int Pager(void) {
     int disk;
     P2_DiskSize(unit, &sector, &track, &disk);
 	void *temp = malloc(USLOSS_MmuPageSize()*numPages);
+	int swapFrameId = 0; //zero for now
 	
 	while (1) {
 		
@@ -213,16 +214,22 @@ int Pager(void) {
 			frame = freeFrameId;
 		}
 		else{
-			P1_P(process_sem);
+			
 			//use clock algorithm to find best frame to use
 			//find random frame to use (for now)
-			int swapFrameId = 0; //zero for now
+			
+			
+			P1_P(process_sem);
+			while(processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock != UNUSED){  
+				processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock = UNUSED;
+				swapFrameId++;
+				swapFrameId = swapFrameId%numFrames;
+			}
+			
 			int swapPage = frames_list[swapFrameId].page;
 			int swapPid = frames_list[swapFrameId].pid;
 			
 			P1_V(process_sem);
-			
-			
 
 			//if swap frame is dirty
 			if(isFrameDirty(swapFrameId) == TRUE){
@@ -324,12 +331,11 @@ int Pager(void) {
 
 		P1_V(process_sem);
 		//if new page
-		if(block <0){
 			//fill with zeros
-			set_MMU_PageFrame_To_Zeroes(page);
-			USLOSS_MmuSetAccess(frame,USLOSS_MMU_PROT_RW);
-		}
-		else{ //load from disk
+		set_MMU_PageFrame_To_Zeroes(page);
+		USLOSS_MmuSetAccess(frame,USLOSS_MMU_PROT_RW);
+		
+		if(block > 0){ //load from disk
 
 			//read page from disk into frame
 			char *buf = malloc(USLOSS_MmuPageSize());
@@ -344,7 +350,7 @@ int Pager(void) {
 			// free buffer
 			free(buf);
 			
-			processes[fault.pid].pageTable[page].block = -1;
+			//processes[fault.pid].pageTable[page].block = -1;
 		}
 		//unmap from this process so that P3_Switch can map it
 		USLOSS_MmuUnmap(TAG,page);
@@ -364,4 +370,15 @@ int Pager(void) {
 	}
 	/* Never gets here. */
 	return 1;
+}
+
+int isFrameUsed(int frameId){
+	int accessPtr;
+	USLOSS_MmuGetAccess(frameId, &accessPtr);
+	int used = accessPtr & USLOSS_MMU_REF;
+
+	if(used == USLOSS_MMU_REF){
+		return TRUE;
+	}
+	return FALSE;
 }
