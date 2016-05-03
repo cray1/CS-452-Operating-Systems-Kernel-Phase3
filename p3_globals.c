@@ -11,6 +11,7 @@ int num_pagers = 0;
 P1_Semaphore frame_sem;
 Frame *frames_list;
 P1_Semaphore pager_sem;
+P1_Semaphore disk_sem;
 int *disk_list;
 int nextBlock = 0; // used for finding incremental disk blocks to use when assigning blocks to pages
 
@@ -24,7 +25,7 @@ int pagerMbox = -1;
 
 
 
-int enableVerboseDebug = 0; // will print detailed progress for all functions when set to 1
+int enableVerboseDebug = 1; // will print detailed progress for all functions when set to 1
 
 int IsVmInitialized = FALSE;
 

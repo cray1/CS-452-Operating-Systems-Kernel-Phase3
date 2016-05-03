@@ -175,10 +175,12 @@ int Pager(void) {
 	int disk;
 	P2_DiskSize(unit, &sector, &track, &disk);
 	int swapFrameId = 0; //zero for now
-	if(pager_mutex == NULL){
-		pager_mutex  = P1_SemCreate(1);
-	}
-
+	
+	P1_P(pager_sem);
+		if(pager_mutex == NULL){
+			pager_mutex  = P1_SemCreate(1);
+		}
+	P1_V(pager_sem);
 
 	while (1) {
 
@@ -202,14 +204,14 @@ int Pager(void) {
 			for (freeFrameId = 0; freeFrameId < numFrames; freeFrameId++) {
 				//DebugPrint("Before P #1\n");
 				P1_P(frame_sem);
-				if (frames_list[freeFrameId].used == UNUSED) {
-					freeFrameFound = TRUE;
-					frames_list[freeFrameId].used = INUSE;
-					frames_list[freeFrameId].process = fault.pid;
-					frames_list[freeFrameId].page = fault.page;
+					if (frames_list[freeFrameId].used == UNUSED) {
+						freeFrameFound = TRUE;
+						frames_list[freeFrameId].used = INUSE;
+						frames_list[freeFrameId].process = fault.pid;
+						frames_list[freeFrameId].page = fault.page;
 					P1_V(frame_sem);
-					break;
-				}
+						break;
+					}
 				P1_V(frame_sem);
 				//DebugPrint("Before V #1\n");
 			}
@@ -231,17 +233,35 @@ int Pager(void) {
 
 				//use clock algorithm to find best frame to use
 				//find random frame to use (for now)
-
-
+				int clock;
+				int tempId;
+		here:
 				P1_P(frame_sem);
 					P1_P(processes[frames_list[swapFrameId].process].mutex);
-						int clock = processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock;
+						if(processes[frames_list[swapFrameId].process].pageTable == NULL){
+							int tempId = swapFrameId;
+							swapFrameId++;
+							swapFrameId = swapFrameId%numFrames;
+						P1_V(processes[frames_list[tempId].process].mutex);
+						P1_V(frame_sem);
+							goto here;
+						}
+						clock = processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock;
 					P1_V(processes[frames_list[swapFrameId].process].mutex);
 				P1_V(frame_sem);
 
 				while(clock != UNUSED){
 					P1_P(frame_sem);
 						P1_P(processes[frames_list[swapFrameId].process].mutex);
+							if(processes[frames_list[swapFrameId].process].pageTable == NULL){
+								tempId = swapFrameId;
+								swapFrameId++;
+								swapFrameId = swapFrameId%numFrames;
+							P1_V(processes[frames_list[tempId].process].mutex);
+							P1_V(frame_sem);
+								goto here;
+							}
+						
 							if(frames_list[swapFrameId].used != INUSE){
 								processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock = UNUSED;
 							}
@@ -321,8 +341,10 @@ int Pager(void) {
 					P1_V(processes[swapPid].mutex);
 
 					//write to disk
-					P2_DiskWrite(unit,b,0,track,buffer);
-
+					P1_P(disk_sem);
+						P2_DiskWrite(unit,b,0,track,buffer);
+					P1_V(disk_sem);
+					
 					DebugPrint("\n\n%s @ %p %d %d %d %d\n\n", buffer, frameAddr, swapPage, swapFrameId, swapBlock, P1_GetPID());
 					DebugPrint("Pager: done writing to disk, current PID: %d!\n", P1_GetPID());
 
@@ -392,7 +414,9 @@ int Pager(void) {
 				//read page from disk into frame
 				char *buf = malloc(USLOSS_MmuPageSize());
 
-				P2_DiskRead(unit,block,0,track, buf);
+				P1_P(disk_sem);
+					P2_DiskRead(unit,block,0,track, buf);
+				P1_V(disk_sem);
 				// calculate where in the P3_vmRegion to write
 				//P1_P(frame_sem);
 
@@ -429,11 +453,10 @@ int Pager(void) {
 
 			DebugPrint("Pager: send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
-
+		P1_V(pager_mutex);
+		
 			/* Unblock waiting (faulting) process */
 			P2_MboxSend(fault.mbox, &fault, &size);
-
-		P1_V(pager_mutex);
 
 		DebugPrint("Pager: done with send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 

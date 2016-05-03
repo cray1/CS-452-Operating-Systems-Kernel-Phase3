@@ -28,6 +28,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	CheckMode();
 	frame_sem = P1_SemCreate(1);
 	pager_sem = P1_SemCreate(1);
+	disk_sem = P1_SemCreate(1);
 	P1_P(frame_sem);
 
 	if (pagers > P3_MAX_PAGERS) {
@@ -217,7 +218,7 @@ void P3_Switch(old, new)
 		CheckPid(old);
 		CheckPid(new);
 
-		P1_P(processes[old].mutex);
+		//P1_P(processes[old].mutex);
 			P3_vmStats.switches++;
 			pages = processes[old].numPages;
 			//P1_V(process_sem);
@@ -242,9 +243,9 @@ void P3_Switch(old, new)
 					//P1_V(process_sem);
 				}
 			}
-		P1_V(processes[old].mutex);
+		//P1_V(processes[old].mutex);
 
-		P1_P(processes[new].mutex);
+		//P1_P(processes[new].mutex);
  			pages = processes[new].numPages;
 
 			if (processes[new].pageTable != NULL) {
@@ -269,7 +270,7 @@ void P3_Switch(old, new)
 					}
 				}
 			}
-		P1_V(processes[new].mutex);
+		//P1_V(processes[new].mutex);
 
 
 	}
