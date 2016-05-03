@@ -25,7 +25,7 @@ int pagerMbox = -1;
 
 
 
-int enableVerboseDebug = 1; // will print detailed progress for all functions when set to 1
+int enableVerboseDebug = 0; // will print detailed progress for all functions when set to 1
 
 int IsVmInitialized = FALSE;
 
@@ -182,9 +182,9 @@ void set_MMU_PageFrame_To_Zeroes(int pageNum) {
  */
 int P3_P(P1_Semaphore sem, char *name){
 	int pid = P1_GetPID();
-	USLOSS_Console("========================================================START P1_P:\tNAME:%s\tPID:%d\n", name,pid);
+	USLOSS_Console("===================================================START\t\tP1_P:\tNAME:%s\tPID:%d\n", name,pid);
 	int ret =  P1_P(sem);
-	USLOSS_Console("========================================================FINISHED P1_P:\tNAME:%s\tPID:%d\n", name,pid);
+	USLOSS_Console("===================================================FINISHED\t\tP1_P:\tNAME:%s\tPID:%d\n", name,pid);
 	return ret;
 
 }
@@ -193,7 +193,7 @@ int P3_P(P1_Semaphore sem, char *name){
  */
 int P3_V(P1_Semaphore sem, char *name){
 	int pid = P1_GetPID();
-	USLOSS_Console("=======================================================P1_V:\tNAME:%s\tPID:%d\n", name,pid);
+	USLOSS_Console("==================================================_____\t\t\tP1_V:\tNAME:%s\tPID:%d\n", name,pid);
 	int ret =  P1_V(sem);
 	return ret;
 }
