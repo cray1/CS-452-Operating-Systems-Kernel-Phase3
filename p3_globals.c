@@ -178,3 +178,22 @@ void set_MMU_PageFrame_To_Zeroes(int pageNum) {
 	memset(region + (pageNum * pageSize), 0, USLOSS_MmuPageSize());
 }
 
+/** Wrapper for P1_P to print
+ */
+int P3_P(P1_Semaphore sem, char *name){
+	int pid = P1_GetPID();
+	USLOSS_Console("========================================================START P1_P:\tNAME:%s\tPID:%d\n", name,pid);
+	int ret =  P1_P(sem);
+	USLOSS_Console("========================================================FINISHED P1_P:\tNAME:%s\tPID:%d\n", name,pid);
+	return ret;
+
+}
+
+/** Wrapper for P1_V to print
+ */
+int P3_V(P1_Semaphore sem, char *name){
+	int pid = P1_GetPID();
+	USLOSS_Console("=======================================================P1_V:\tNAME:%s\tPID:%d\n", name,pid);
+	int ret =  P1_V(sem);
+	return ret;
+}
