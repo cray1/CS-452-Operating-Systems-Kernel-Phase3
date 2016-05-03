@@ -73,7 +73,9 @@ int pid; {
 				processes[pid].pageTable[i].frame = -1;
 				processes[pid].pageTable[i].state = UNUSED;
 				if(processes[pid].pageTable[i].block != -1){
-					disk_list[processes[pid].pageTable[i].block] = UNUSED;
+					P3_P(disk_list_sem,"DL_Sem", -1);
+						disk_list[processes[pid].pageTable[i].block] = UNUSED;
+					P3_V(disk_list_sem,"DL_Sem", -1);
 				}
 				processes[pid].pageTable[i].block = -1;
 				USLOSS_MmuUnmap(TAG,i);
@@ -257,15 +259,19 @@ int Pager(void) {
 					setFrameUnused(swapFrameId++);
 					swapFrameId %= numFrames;
 				}
-
+				int pageExists = TRUE;
 				P3_P(frame_sem, "Frame_Sem3", -1);
+					if(processes[frames_list[swapFrameId].pid].pageTable == NULL){
+						pageExists = FALSE;
+					}
+				
 					int swapPage = frames_list[swapFrameId].page;
 					int swapPid = frames_list[swapFrameId].pid;
 					frames_list[swapFrameId].used = INUSE;
 				P3_V(frame_sem, "Frame_Sem3", -1);
 
 				//if swap frame is dirty
-				if(isFrameDirty(swapFrameId) == TRUE){
+				if(isFrameDirty(swapFrameId) == TRUE && pageExists){
 
 
 					DebugPrint("Pager: swapFrame [%d] is dirty, current PID: %d!\n", freeFrameId, P1_GetPID());
@@ -282,14 +288,15 @@ int Pager(void) {
 						USLOSS_Halt(1);
 					}
 
-					P3_P(frame_sem, "Frame_Sem4", -1);
-						P3_vmStats.pageOuts++;
-						P3_P(processes[P1_GetPID()].mutex, "Process_Sem3", P1_GetPID());
-							processes[P1_GetPID()].pageTable[swapPage].frame = swapFrameId;
-							processes[P1_GetPID()].pageTable[swapPage].state = INCORE;
-						P3_V(processes[P1_GetPID()].mutex, "Process_Sem3", P1_GetPID());
+					P3_vmStats.pageOuts++;
+					P3_P(processes[P1_GetPID()].mutex, "Process_Sem3", P1_GetPID());
+						processes[P1_GetPID()].pageTable[swapPage].frame = swapFrameId;
+						processes[P1_GetPID()].pageTable[swapPage].state = INCORE;
+					P3_V(processes[P1_GetPID()].mutex, "Process_Sem3", P1_GetPID());
+					
+					P3_P(processes[swapPid].mutex, "Process_Sem", swapPid);
 						int swapBlock = processes[swapPid].pageTable[swapPage].block;
-					P3_V(frame_sem, "Frame_Sem4", -1);
+					P3_V(processes[swapPid].mutex, "Process_Sem", swapPid);
 
 					DebugPrint("Pager: swapBlock [%d], current PID: %d!\n", swapBlock, P1_GetPID());
 					if(swapBlock < 0){
@@ -297,20 +304,22 @@ int Pager(void) {
 						DebugPrint("Pager: swapBlock [%d] is -1, getting new block, current PID: %d!\n", swapBlock, P1_GetPID());
 
 						while(disk_list[nextBlock] != UNUSED){
-							P3_P(frame_sem, "Frame_Sem5", -1);
+							P3_P(disk_list_sem, "Frame_Sem5", -1);
 								nextBlock = (nextBlock + 1)%track;
-							P3_V(frame_sem, "Frame_Sem5", -1);
+							P3_V(disk_list_sem, "Frame_Sem5", -1);
 						}
 
-						P3_P(frame_sem, "Frame_Sem6", -1);
+						P3_P(disk_list_sem,"DL_Sem", -1);
 							disk_list[nextBlock] = INUSE;
 							swapBlock = nextBlock;
 							nextBlock = (nextBlock+1)%track;
-							P3_P(processes[swapPid].mutex, "Process_Sem4", swapPid);
-								processes[swapPid].pageTable[swapPage].block = swapBlock;
-							P3_V(processes[swapPid].mutex, "Process_Sem4", swapPid);
-							DebugPrint("Pager: swapBlock assigned [%d], current PID: %d!\n", swapBlock, P1_GetPID());
-						P3_V(frame_sem, "Frame_Sem6", -1);
+						P3_V(disk_list_sem,"DL_Sem", -1);
+						
+						P3_P(processes[swapPid].mutex, "Process_Sem4", swapPid);
+							processes[swapPid].pageTable[swapPage].block = swapBlock;
+						P3_V(processes[swapPid].mutex, "Process_Sem4", swapPid);
+						DebugPrint("Pager: swapBlock assigned [%d], current PID: %d!\n", swapBlock, P1_GetPID());
+
 					}
 
 					//create buffer to store page
@@ -339,23 +348,28 @@ int Pager(void) {
 
 					USLOSS_MmuUnmap(TAG,swapPage);
 
+					USLOSS_Console("swappid: %d\t page: %d\n", swapPid,swapPage);
 					P3_P(processes[P1_GetPID()].mutex, "Process_Sem", P1_GetPID());
 						processes[P1_GetPID()].pageTable[swapPage].frame = -1;
 						processes[P1_GetPID()].pageTable[swapPage].state = UNUSED;
 					P3_V(processes[P1_GetPID()].mutex, "Process_Sem", P1_GetPID());
 					P3_P(processes[swapPid].mutex, "Process_Sem", swapPid );
-						processes[swapPid].pageTable[swapPage].state = ONDISK;
-						processes[swapPid].pageTable[swapPage].frame = -1;
+						if(processes[swapPid].pageTable != NULL){
+							processes[swapPid].pageTable[swapPage].state = ONDISK;
+							processes[swapPid].pageTable[swapPage].frame = -1;
+						}
 					P3_V(processes[swapPid].mutex, "Process_Sem", swapPid);
 				}else{
 					P3_P(processes[swapPid].mutex, "Process_Sem", swapPid);
 					//update swap frame owning process's page table entry for its page to reflect page no longer being in frame
-						processes[swapPid].pageTable[swapPage].frame = -1;
-						processes[swapPid].pageTable[swapPage].state = UNUSED;
+						if(processes[swapPid].pageTable != NULL){
+							processes[swapPid].pageTable[swapPage].frame = -1;
+							processes[swapPid].pageTable[swapPage].state = UNUSED;
+						}
 					P3_V(processes[swapPid].mutex, "Process_Sem", swapPid);
 				}
 
-
+				
 				frame = swapFrameId;
 				swapFrameId++;
 				swapFrameId = swapFrameId%numFrames;

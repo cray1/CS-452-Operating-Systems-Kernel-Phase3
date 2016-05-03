@@ -84,6 +84,7 @@ extern Frame *frames_list;
 extern P1_Semaphore frame_sem;
 extern P1_Semaphore pager_sem;
 extern P1_Semaphore disk_sem;
+extern P1_Semaphore disk_list_sem;
 extern int *disk_list;
 extern int nextBlock; // used for finding incremental disk blocks to use when assigning blocks to pages
 

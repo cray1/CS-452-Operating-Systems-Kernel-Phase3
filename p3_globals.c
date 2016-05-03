@@ -12,6 +12,7 @@ P1_Semaphore frame_sem;
 Frame *frames_list;
 P1_Semaphore pager_sem;
 P1_Semaphore disk_sem;
+P1_Semaphore disk_list_sem;
 int *disk_list;
 int nextBlock = 0; // used for finding incremental disk blocks to use when assigning blocks to pages
 

@@ -29,6 +29,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	frame_sem = P1_SemCreate(1);
 	pager_sem = P1_SemCreate(1);
 	disk_sem = P1_SemCreate(1);
+	disk_list_sem = P1_SemCreate(1);
 	P1_P(frame_sem);
 
 	if (pagers > P3_MAX_PAGERS) {
