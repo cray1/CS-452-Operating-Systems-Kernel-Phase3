@@ -85,11 +85,6 @@ P4_Startup(void *arg)
     int     child;
     int     numChildren = sizeof(names) / sizeof(char *);
 
-	int track;
-	Sys_DiskSize(1, &i, &track, &rc);
-	
-	USLOSS_Console("%d",track);
-	abort();
     USLOSS_Console("P4_Startup starting.\n");
     rc = Sys_VmInit(PAGES, PAGES, numChildren * PAGES, 1, (void **) &vmRegion);
     if (rc != 0) {
