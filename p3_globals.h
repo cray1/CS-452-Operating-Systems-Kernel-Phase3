@@ -129,7 +129,7 @@ char *get_MMU_Frame_Address(int pageNum);
 void set_MMU_PageFrame_contents(int pageNum,  void *str, int size) ;
 void set_MMU_PageFrame_To_Zeroes(int pageNum);
 
-int P3_P(P1_Semaphore sem, char *name);
-int P3_V(P1_Semaphore sem, char *name);
+int P3_P(P1_Semaphore sem, char *name, int id);
+int P3_V(P1_Semaphore sem, char *name, int id);
 
 #endif /* P3_GLOBALS_H_ */
