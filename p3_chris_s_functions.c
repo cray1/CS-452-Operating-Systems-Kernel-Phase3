@@ -303,7 +303,7 @@ void P3_Fork(pid)
 		CheckMode();
 		CheckPid(pid);
 
-		P3_P(processes[pid].mutex, "Fork_1");
+		P3_P(processes[pid].mutex, "Fork_1", pid);
 			processes[pid].has_pages = TRUE;
 			processes[pid].numPages = numPages;
 			processes[pid].pageTable = (PTE *) malloc(sizeof(PTE) * numPages);
@@ -314,10 +314,10 @@ void P3_Fork(pid)
 				processes[pid].pageTable[i].clock = 0;
 				processes[pid].pageTable[i].init = FALSE;
 			}
-		P3_V(processes[pid].mutex, "Fork_1");
+		P3_V(processes[pid].mutex, "Fork_1", pid);
 	} else {
-		P3_P(processes[pid].mutex, "Fork_2");
+		P3_P(processes[pid].mutex, "Fork_2", pid);
 			processes[pid].has_pages = FALSE;
-		P3_V(processes[pid].mutex, "Fork_2");
+		P3_V(processes[pid].mutex, "Fork_2", pid);
 	}
 }
