@@ -182,9 +182,9 @@ void set_MMU_PageFrame_To_Zeroes(int pageNum) {
  */
 int P3_P(P1_Semaphore sem, char *name, int id){
 	int pid = P1_GetPID();
-	USLOSS_Console("===================================================START\t\tP1_P:\tp_NAME:%s %d\t\tPID:%d\n",name,id,pid);
+	DebugPrint("===================================================START\t\tP1_P:\tp_NAME:%s %d\t\tPID:%d\n",name,id,pid);
 	int ret =  P1_P(sem);
-	USLOSS_Console("===================================================FINISHED\t\tP1_P:\tp_NAME:%s %d\t\tPID:%d\n", name,id,pid);
+	DebugPrint("===================================================FINISHED\t\tP1_P:\tp_NAME:%s %d\t\tPID:%d\n", name,id,pid);
 	return ret;
 
 }
@@ -193,7 +193,7 @@ int P3_P(P1_Semaphore sem, char *name, int id){
  */
 int P3_V(P1_Semaphore sem, char *name, int id){
 	int pid = P1_GetPID();
-	USLOSS_Console("==================================================_____\t\t\tP1_V:\tv_NAME:%s %d\t\tPID:%d\n", name,id,pid);
+	DebugPrint("==================================================_____\t\t\tP1_V:\tv_NAME:%s %d\t\tPID:%d\n", name,id,pid);
 	int ret =  P1_V(sem);
 	return ret;
 }

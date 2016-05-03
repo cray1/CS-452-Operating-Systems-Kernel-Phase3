@@ -1,6 +1,23 @@
 #include "p3_globals.h"
 
 
+int isFrameUsed(int frameId){
+	int accessPtr;
+	USLOSS_MmuGetAccess(frameId, &accessPtr);
+	int used = accessPtr & USLOSS_MMU_REF;
+
+	if(used == USLOSS_MMU_REF){
+		return TRUE;
+	}
+	return FALSE;
+}
+
+void setFrameUnused(int frameId){
+	int accessPtr;
+	USLOSS_MmuGetAccess(frameId, &accessPtr);
+
+	USLOSS_MmuSetAccess(frameId, accessPtr & ~USLOSS_MMU_REF); 
+}
 
 /*
  *----------------------------------------------------------------------
@@ -235,41 +252,10 @@ int Pager(void) {
 				//find random frame to use (for now)
 				int clock;
 				int tempId;
-		here:
-				P3_P(frame_sem, "Frame_Sem1", -1);
-					P3_P(processes[frames_list[swapFrameId].process].mutex, "Process_Sem1", frames_list[swapFrameId].process);
-						if(processes[frames_list[swapFrameId].process].pageTable == NULL){
-							int tempId = swapFrameId;
-							swapFrameId++;
-							swapFrameId = swapFrameId%numFrames;
-						P3_V(processes[frames_list[tempId].process].mutex, "Process_Sem1", frames_list[tempId].process );
-						P3_V(frame_sem, "Frame_Sem1", -1);
-							goto here;
-						}
-						clock = processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock;
-					P3_V(processes[frames_list[swapFrameId].process].mutex, "Process_Sem1", frames_list[swapFrameId].process);
-				P3_V(frame_sem, "Frame_Sem1", -1);
 
-				while(clock != UNUSED){
-					P3_P(frame_sem, "Frame_Sem2", -1);
-						P3_P(processes[frames_list[swapFrameId].process].mutex, "Process_Sem2", frames_list[swapFrameId].process);
-							if(processes[frames_list[swapFrameId].process].pageTable == NULL){
-								tempId = swapFrameId;
-								swapFrameId++;
-								swapFrameId = swapFrameId%numFrames;
-							P3_V(processes[frames_list[tempId].process].mutex, "Process_Sem2", frames_list[swapFrameId].process);
-							P3_V(frame_sem, "Frame_Sem2", -1);
-								goto here;
-							}
-						
-							if(frames_list[swapFrameId].used != INUSE){
-								processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock = UNUSED;
-							}
-							swapFrameId++;
-							swapFrameId = swapFrameId%numFrames;
-							clock = processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock;
-						P3_V(processes[frames_list[swapFrameId].process].mutex, "Process_Sem2", frames_list[swapFrameId].process);
-					P3_V(frame_sem, "Frame_Sem2", -1);
+				while(isFrameUsed(swapFrameId)){
+					setFrameUnused(swapFrameId++);
+					swapFrameId %= numFrames;
 				}
 
 				P3_P(frame_sem, "Frame_Sem3", -1);
@@ -417,6 +403,13 @@ int Pager(void) {
 				P3_P(disk_sem, "Disk_Sem", -1);
 					P2_DiskRead(unit,block,0,track, buf);
 				P3_V(disk_sem, "Disk_Sem", -1);
+				
+				/*P3_P(processes[fault.pid].mutex, "Process_Sem", fault.pid);
+					disk_list[block] = UNUSED;
+					processes[fault.pid].pageTable[page].block = -1;
+				P3_V(processes[fault.pid].mutex, "Process_Sem", fault.pid);
+				*/
+				
 				// calculate where in the P3_vmRegion to write
 				//P1_P(frame_sem);
 
@@ -425,6 +418,7 @@ int Pager(void) {
 				// copy contents of buffer to the frame
 				P3_vmStats.pageIns++;
 				memcpy(destination, buf, USLOSS_MmuPageSize());
+				
 				
 				//P1_V(frame_sem);
 
@@ -463,15 +457,4 @@ int Pager(void) {
 	}
 	/* Never gets here. */
 	return 1;
-}
-
-int isFrameUsed(int frameId){
-	int accessPtr;
-	USLOSS_MmuGetAccess(frameId, &accessPtr);
-	int used = accessPtr & USLOSS_MMU_REF;
-
-	if(used == USLOSS_MMU_REF){
-		return TRUE;
-	}
-	return FALSE;
 }

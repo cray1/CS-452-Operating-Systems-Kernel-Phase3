@@ -20,7 +20,7 @@
 #define CONCURRENT  4  // # of children to run at a time
 #define PAGES       4 // # of pages per child
 #define FRAMES      (CONCURRENT * 2)
-#define PRIORITY    3
+#define PRIORITY    2
 #define ITERATIONS  100
 #define PAGERS      1
 
