@@ -83,8 +83,8 @@ Child(void *arg)
                 USLOSS_Console("%f: Child %d (%d) reading (zero-filled) page %d @ %p\n", 
                     timestamp, id, pid, page, target);
                 if (memcmp(target, zeros, pageSize)) {
-                    USLOSS_Console("Child %d (%d) page %d @ %p is not zero-filled (%s)\n",
-                        id, pid, page, target, target);
+                    USLOSS_Console("Child %d (%d) page %d @ %p is not zero-filled\n",
+                        id, pid, page, target);
                     abort();
                 }
             }
@@ -109,15 +109,14 @@ P4_Startup(void *arg)
     int     finished;   // # of children that have finished.
 
     USLOSS_Console("P4_Startup starting.\n");
-    USLOSS_Console("Pages: %d, Frames: %d, Children %d, Iterations %d, Priority %d, Pagers %d\n",
-    PAGES, FRAMES, CHILDREN, ITERATIONS, PRIORITY, PAGERS);
+    USLOSS_Console("Pages: %d, Frames: %d, Children %d, Iterations %d, Priority %d, Pagers %d\n", PAGES, FRAMES, CHILDREN, ITERATIONS, PRIORITY, PAGERS);
     rc = Sys_VmInit(PAGES, PAGES, FRAMES, PAGERS, (void **) &vmRegionTest);
     if (rc != 0) {
         USLOSS_Console("Sys_VmInit failed: %d\n", rc);
         USLOSS_Halt(1);
     }
     assert(vmRegionTest != NULL);
-	
+
     pageSize = USLOSS_MmuPageSize();
     zeros = malloc(pageSize);
     memset(zeros, 0, pageSize);

@@ -1,5 +1,7 @@
 #include "p3_globals.h"
 
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -20,11 +22,11 @@
 void P3_Quit(pid)
 int pid; {
 
-	/*DebugPrint("P3_Quit called, current PID: %d, %d\n", P1_GetPID(), pid);
-	DebugPrint("=============================================P3_Quit\n");
+	USLOSS_Console("P3_Quit called, current PID: %d, %d\n", P1_GetPID(), pid);
+	USLOSS_Console("=============================================P3_Quit\n");
 	P1_DumpProcesses();
-	DebugPrint("=============================================P3_Quit\n");
-	 */
+	USLOSS_Console("=============================================P3_Quit\n");
+	 
 	P1_P(process_sem);
 	if (IsVmInitialized == TRUE && processes[pid].numPages > 0 && processes[pid].pageTable != NULL ) { // do nothing if  VM system is uninitialized
 
@@ -49,6 +51,9 @@ int pid; {
 			}
 			processes[pid].pageTable[i].frame = -1;
 			processes[pid].pageTable[i].state = UNUSED;
+			if(processes[pid].pageTable[i].block != -1){
+				disk_list[processes[pid].pageTable[i].block] = UNUSED;
+			}
 			processes[pid].pageTable[i].block = -1;
 			USLOSS_MmuUnmap(TAG,i);
 		}
@@ -180,11 +185,12 @@ int Pager(void) {
 		DebugPrint( "Pager waiting to receive on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 		P2_MboxReceive(pagerMbox, (void *) &fault, &size);
 
-		P1_V(pager_sem);
 
 		if(fault.pid == -1 || processes[P1_GetPID()].pager_daemon_marked_to_kill == TRUE){
 			P1_Quit(0);
 		}
+		
+		P1_V(pager_sem);
 
 		DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
@@ -227,12 +233,18 @@ int Pager(void) {
 
 
 			P1_P(process_sem);
-			while(processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock != UNUSED){
-				if(frames_list[swapFrameId].used != INUSE){
+			int clock = processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock;
+			P1_V(process_sem);
+			
+			while(clock != UNUSED){
+				P1_P(process_sem);
+				if(clock = frames_list[swapFrameId].used != INUSE){
 					processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock = UNUSED;
 				}
 				swapFrameId++;
 				swapFrameId = swapFrameId%numFrames;
+				clock = processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock;
+				P1_V(process_sem);
 			}
 
 			int swapPage = frames_list[swapFrameId].page;
@@ -271,9 +283,18 @@ int Pager(void) {
 				if(swapBlock < 0){
 					//get new block
 					DebugPrint("Pager: swapBlock [%d] is -1, getting new block, current PID: %d!\n", swapBlock, P1_GetPID());								
+					
+					while(disk_list[nextBlock] != UNUSED){							
+						P1_P(process_sem);
+						nextBlock = (nextBlock + 1)%track;
+						P1_V(process_sem);
+					}
+					
 					P1_P(process_sem);
+					
+					disk_list[nextBlock] = INUSE;
 					swapBlock = nextBlock;
-					nextBlock++;
+					nextBlock = (nextBlock+1)%track;
 					processes[swapPid].pageTable[swapPage].block = swapBlock;
 					DebugPrint("Pager: swapBlock assigned [%d], current PID: %d!\n", swapBlock, P1_GetPID());								
 					P1_V(process_sem);
@@ -287,9 +308,12 @@ int Pager(void) {
 				//copy to buffer and write to disk
 				memcpy(buffer, frameAddr, USLOSS_MmuPageSize());
 				DebugPrint("Pager: writing to disk, current PID: %d!\n",  P1_GetPID());
-
+				
+				P1_P(process_sem);
+				int b = processes[swapPid].pageTable[swapPage].block;
+				P1_V(process_sem);
 				//write to disk
-				int test = P2_DiskWrite(unit,processes[swapPid].pageTable[swapPage].block,0,track,buffer);
+				int test = P2_DiskWrite(unit,b,0,track,buffer);
 
 				DebugPrint("\n\n%s @ %p %d %d %d %d\n\n", buffer, frameAddr, swapPage, swapFrameId, swapBlock, P1_GetPID());
 				DebugPrint("Pager: done writing to disk, current PID: %d!\n", P1_GetPID());
@@ -364,12 +388,12 @@ int Pager(void) {
 			// copy contents of buffer to the frame
 			P3_vmStats.pageIns++;
 			memcpy(destination, buf, USLOSS_MmuPageSize());
+			
 			P1_V(process_sem);
 
 			// free buffer
 			free(buf);
 
-			//processes[fault.pid].pageTable[page].block = -1;
 		}
 		//unmap from this process so that P3_Switch can map it
 		USLOSS_MmuUnmap(TAG,page);

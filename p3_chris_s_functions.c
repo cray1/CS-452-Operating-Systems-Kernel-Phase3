@@ -59,6 +59,14 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 		processes[i].numPages = 0;
 		processes[i].pageTable = NULL;
 	}
+	
+	int sector;
+	int track;
+	int disk;
+	P2_DiskSize(1,&sector, &track, &disk);
+	
+	disk_list = malloc(sizeof(int)*track);
+	memset(disk_list, 0, sizeof(int)*track);
 
 	/*
 	 * Create the page fault mailbox and fork the pagers here.
@@ -209,7 +217,7 @@ void P3_Switch(old, new)
 		P1_P(process_sem);
 		P3_vmStats.switches++;
 		pages = processes[old].numPages;
-		P1_V(process_sem);
+		//P1_V(process_sem);
 
 		if (processes[old].pageTable != NULL) {
 			for (page = 0; page < pages; page++) {
@@ -217,7 +225,7 @@ void P3_Switch(old, new)
 				 * If a page of the old process is in memory then a mapping
 				 * for it must be in the MMU. Remove it.
 				 */
-				P1_P(process_sem);
+				//P1_P(process_sem);
 				if (processes[old].pageTable[page].state == INCORE) {
 					assert(processes[old].pageTable[page].frame != -1);
 					status = USLOSS_MmuUnmap(0, page);
@@ -228,13 +236,13 @@ void P3_Switch(old, new)
 						USLOSS_Halt(1);
 					} */
 				}
-				P1_V(process_sem);
+				//P1_V(process_sem);
 			}
 		}
 
-		P1_P(process_sem);
+		//P1_P(process_sem);
 		pages = processes[new].numPages;
-		P1_V(process_sem);
+		//P1_V(process_sem);
 
 		if (processes[new].pageTable != NULL) {
 			for (page = 0; page < pages; page++) {
@@ -242,7 +250,6 @@ void P3_Switch(old, new)
 				 * If a page of the new process is in memory then add a mapping
 				 * for it to the MMU.
 				 */
-				P1_P(process_sem);
 				if (processes[new].pageTable[page].state == INCORE) {
 					assert(processes[new].pageTable[page].frame != -1);
 					USLOSS_MmuUnmap(TAG, page);
@@ -257,9 +264,10 @@ void P3_Switch(old, new)
 					}
 					processes[new].pageTable[page].clock = 1;
 				}
-				P1_V(process_sem);
 			}
 		}
+		
+		P1_V(process_sem);
 
 	}
 }

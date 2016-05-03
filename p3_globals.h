@@ -82,7 +82,7 @@ extern int IsVmInitialized;
 extern Frame *frames_list;
 extern P1_Semaphore process_sem;
 extern P1_Semaphore pager_sem;
-extern int nextDiskBlock;
+extern int *disk_list;
 extern int nextBlock; // used for finding incremental disk blocks to use when assigning blocks to pages
 
 
