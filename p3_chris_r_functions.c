@@ -324,7 +324,7 @@ int Pager(void) {
 					P1_V(processes[swapPid].mutex);
 
 					//write to disk
-					int test = P2_DiskWrite(unit,b,0,track,buffer);
+					P2_DiskWrite(unit,b,0,track,buffer);
 
 					DebugPrint("\n\n%s @ %p %d %d %d %d\n\n", buffer, frameAddr, swapPage, swapFrameId, swapBlock, P1_GetPID());
 					DebugPrint("Pager: done writing to disk, current PID: %d!\n", P1_GetPID());
@@ -334,7 +334,7 @@ int Pager(void) {
 
 					USLOSS_MmuUnmap(TAG,swapPage);
 
-					P_P(processes[P1_GetPID()].mutex);
+					P1_P(processes[P1_GetPID()].mutex);
 						processes[P1_GetPID()].pageTable[swapPage].frame = -1;
 						processes[P1_GetPID()].pageTable[swapPage].state = UNUSED;
 					P1_V(processes[P1_GetPID()].mutex);
