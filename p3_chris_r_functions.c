@@ -22,10 +22,11 @@
 void P3_Quit(pid)
 int pid; {
 
-	USLOSS_Console("P3_Quit called, current PID: %d, %d\n", P1_GetPID(), pid);
-	USLOSS_Console("=============================================P3_Quit\n");
-	P1_DumpProcesses();
-	USLOSS_Console("=============================================P3_Quit\n");
+	DebugPrint("P3_Quit called, current PID: %d, %d\n", P1_GetPID(), pid);
+	DebugPrint("=============================================P3_Quit\n");
+	if(enableVerboseDebug == TRUE)
+		P1_DumpProcesses();
+	DebugPrint("=============================================P3_Quit\n");
 	 
 
 	P1_P(processes[pid].mutex);
@@ -186,18 +187,14 @@ int Pager(void) {
 		int size = sizeof(Fault);
 
 		P1_P(pager_sem);
-		DebugPrint( "Pager waiting to receive on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
-		P2_MboxReceive(pagerMbox, (void *) &fault, &size);
-
-
-		if(fault.pid == -1 || processes[P1_GetPID()].pager_daemon_marked_to_kill == TRUE){
-			P1_Quit(0);
-		}
-		
+			DebugPrint( "Pager waiting to receive on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
+			P2_MboxReceive(pagerMbox, (void *) &fault, &size);
 		P1_V(pager_sem);
 
 			DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
-
+			if(fault.pid == -1 || processes[P1_GetPID()].pager_daemon_marked_to_kill == TRUE){
+						P1_Quit(0);
+					}
 			P1_P(pager_mutex);
 			/* Find a free frame */
 			int freeFrameFound = FALSE;
