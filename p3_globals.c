@@ -8,7 +8,7 @@ int	numPages = 0;
 int	numFrames = 0;
 int *pagers_pids;
 int num_pagers = 0;
-P1_Semaphore process_sem;
+P1_Semaphore frame_sem;
 Frame *frames_list;
 P1_Semaphore pager_sem;
 int *disk_list;

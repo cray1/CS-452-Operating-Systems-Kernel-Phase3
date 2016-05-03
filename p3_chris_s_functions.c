@@ -26,9 +26,9 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 
 	DebugPrint("P3_VmInit called, current PID: %d\n", P1_GetPID());
 	CheckMode();
-	process_sem = P1_SemCreate(1);
+	frame_sem = P1_SemCreate(1);
 	pager_sem = P1_SemCreate(1);
-	P1_P(process_sem);
+	P1_P(frame_sem);
 
 	if (pagers > P3_MAX_PAGERS) {
 		// too many pagers
@@ -58,6 +58,7 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	for (i = 0; i < P1_MAXPROC; i++) {
 		processes[i].numPages = 0;
 		processes[i].pageTable = NULL;
+		processes[i].mutex = P1_SemCreate(1);
 	}
 	
 	int sector;
@@ -91,18 +92,20 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	if (enableVerboseDebug == TRUE)
 		USLOSS_Console("pagers: %d\n", num_pagers);
 
+
+
 	for (i = 0; i < num_pagers; i++) {
 		char name[10];
 		sprintf(name, "Pager_%d", i);
-		P1_V(process_sem);
+		P1_V(frame_sem);
 		pagers_pids[i] = P1_Fork(name, Pager_Wrapper, NULL, USLOSS_MIN_STACK,
 		P3_PAGER_PRIORITY);
-		P1_P(process_sem);
+		P1_P(frame_sem);
 		if (enableVerboseDebug == TRUE)
 			USLOSS_Console("P3_VmInit:  forked pager with pid %d\n",
 					pagers_pids[i]);
 	}
-	P1_V(process_sem);
+	P1_V(frame_sem);
 	return 0;
 }
 
@@ -138,7 +141,7 @@ void P3_VmDestroy(void) {
 	 */
 	int i;
 	for (i = 0; i < num_pagers; i++) {
-		P1_P(process_sem);
+		P1_P(frame_sem);
 		if(isValidPid(pagers_pids[i]) == TRUE)
 		{
 			processes[pagers_pids[i]].pager_daemon_marked_to_kill = 1;
@@ -147,7 +150,7 @@ void P3_VmDestroy(void) {
 		Fault fault;
 		int size = sizeof(Fault);
 		fault.pid = -1;
-		P1_V(process_sem);
+		P1_V(frame_sem);
 
 		P2_MboxCondSend(pagerMbox, (void *) &fault, &size);
 
@@ -155,7 +158,7 @@ void P3_VmDestroy(void) {
 	/*
 	 * Print vm statistics.
 	 */
-	P1_P(process_sem);
+	P1_P(frame_sem);
 
 	P3_vmStats.freeFrames = 0;
 	int l;
@@ -178,7 +181,7 @@ void P3_VmDestroy(void) {
 	USLOSS_Console("pageIns: %d\n", P3_vmStats.pageIns);
 	USLOSS_Console("pageOuts: %d\n", P3_vmStats.pageOuts);
 	USLOSS_Console("replaced: %d\n", P3_vmStats.replaced);
-	P1_V(process_sem);
+	P1_V(frame_sem);
 	/* and so on... */
 }
 
@@ -214,60 +217,60 @@ void P3_Switch(old, new)
 		CheckPid(old);
 		CheckPid(new);
 
-		P1_P(process_sem);
-		P3_vmStats.switches++;
-		pages = processes[old].numPages;
-		//P1_V(process_sem);
+		P1_P(processes[old].mutex);
+			P3_vmStats.switches++;
+			pages = processes[old].numPages;
+			//P1_V(process_sem);
 
-		if (processes[old].pageTable != NULL) {
-			for (page = 0; page < pages; page++) {
-				/*
-				 * If a page of the old process is in memory then a mapping
-				 * for it must be in the MMU. Remove it.
-				 */
-				//P1_P(process_sem);
-				if (processes[old].pageTable[page].state == INCORE) {
-					assert(processes[old].pageTable[page].frame != -1);
-					status = USLOSS_MmuUnmap(0, page);
-					/*if (status != USLOSS_MMU_OK) {
-						// report error and abort
-						USLOSS_Console("P3_Switch: ");
-						Print_MMU_Error_Code(status);
-						USLOSS_Halt(1);
-					} */
-				}
-				//P1_V(process_sem);
-			}
-		}
-
-		//P1_P(process_sem);
-		pages = processes[new].numPages;
-		//P1_V(process_sem);
-
-		if (processes[new].pageTable != NULL) {
-			for (page = 0; page < pages; page++) {
-				/*
-				 * If a page of the new process is in memory then add a mapping
-				 * for it to the MMU.
-				 */
-				if (processes[new].pageTable[page].state == INCORE) {
-					assert(processes[new].pageTable[page].frame != -1);
-					USLOSS_MmuUnmap(TAG, page);
-					status = USLOSS_MmuMap(TAG, page,
-							processes[new].pageTable[page].frame,
-							USLOSS_MMU_PROT_RW);
-					if (status != USLOSS_MMU_OK) {
-						// report error and abort
-						USLOSS_Console("P3_Switch: ");
-						Print_MMU_Error_Code(status);
-						USLOSS_Halt(1);
+			if (processes[old].pageTable != NULL) {
+				for (page = 0; page < pages; page++) {
+					/*
+					 * If a page of the old process is in memory then a mapping
+					 * for it must be in the MMU. Remove it.
+					 */
+					//P1_P(process_sem);
+					if (processes[old].pageTable[page].state == INCORE) {
+						assert(processes[old].pageTable[page].frame != -1);
+						status = USLOSS_MmuUnmap(0, page);
+						/*if (status != USLOSS_MMU_OK) {
+							// report error and abort
+							USLOSS_Console("P3_Switch: ");
+							Print_MMU_Error_Code(status);
+							USLOSS_Halt(1);
+						} */
 					}
-					processes[new].pageTable[page].clock = 1;
+					//P1_V(process_sem);
 				}
 			}
-		}
-		
-		P1_V(process_sem);
+		P1_V(processes[old].mutex);
+
+		P1_P(processes[new].mutex);
+ 			pages = processes[new].numPages;
+
+			if (processes[new].pageTable != NULL) {
+				for (page = 0; page < pages; page++) {
+					/*
+					 * If a page of the new process is in memory then add a mapping
+					 * for it to the MMU.
+					 */
+					if (processes[new].pageTable[page].state == INCORE) {
+						assert(processes[new].pageTable[page].frame != -1);
+						USLOSS_MmuUnmap(TAG, page);
+						status = USLOSS_MmuMap(TAG, page,
+								processes[new].pageTable[page].frame,
+								USLOSS_MMU_PROT_RW);
+						if (status != USLOSS_MMU_OK) {
+							// report error and abort
+							USLOSS_Console("P3_Switch: ");
+							Print_MMU_Error_Code(status);
+							USLOSS_Halt(1);
+						}
+						processes[new].pageTable[page].clock = 1;
+					}
+				}
+			}
+		P1_V(processes[new].mutex);
+
 
 	}
 }
@@ -299,19 +302,21 @@ void P3_Fork(pid)
 		CheckMode();
 		CheckPid(pid);
 
-		P1_P(process_sem);
-		processes[pid].has_pages = TRUE;
-		processes[pid].numPages = numPages;
-		processes[pid].pageTable = (PTE *) malloc(sizeof(PTE) * numPages);
-		for (i = 0; i < numPages; i++) {
-			processes[pid].pageTable[i].frame = -1;
-			processes[pid].pageTable[i].block = -1;
-			processes[pid].pageTable[i].state = UNUSED;
-			processes[pid].pageTable[i].clock = 0;
-			processes[pid].pageTable[i].init = FALSE;
-		}
-		P1_V(process_sem);
+		P1_P(processes[pid].mutex);
+			processes[pid].has_pages = TRUE;
+			processes[pid].numPages = numPages;
+			processes[pid].pageTable = (PTE *) malloc(sizeof(PTE) * numPages);
+			for (i = 0; i < numPages; i++) {
+				processes[pid].pageTable[i].frame = -1;
+				processes[pid].pageTable[i].block = -1;
+				processes[pid].pageTable[i].state = UNUSED;
+				processes[pid].pageTable[i].clock = 0;
+				processes[pid].pageTable[i].init = FALSE;
+			}
+		P1_V(processes[pid].mutex);
 	} else {
-		processes[pid].has_pages = FALSE;
+		P1_P(processes[pid].mutex);
+			processes[pid].has_pages = FALSE;
+		P1_V(processes[pid].mutex);
 	}
 }

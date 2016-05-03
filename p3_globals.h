@@ -50,6 +50,7 @@ typedef struct Process {
     /* Add more stuff here if necessary. */
 	int 	has_pages;
 	int 	pager_daemon_marked_to_kill;
+	P1_Semaphore mutex;
 } Process;
 
 /*
@@ -80,7 +81,7 @@ extern P3_VmStats	P3_vmStats;
 extern int pagerMbox;
 extern int IsVmInitialized;
 extern Frame *frames_list;
-extern P1_Semaphore process_sem;
+extern P1_Semaphore frame_sem;
 extern P1_Semaphore pager_sem;
 extern int *disk_list;
 extern int nextBlock; // used for finding incremental disk blocks to use when assigning blocks to pages
