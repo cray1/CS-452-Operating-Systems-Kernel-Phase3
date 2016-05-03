@@ -22,10 +22,10 @@
 #define FRAMES      (CONCURRENT * 2)
 #define PRIORITY    3
 #define ITERATIONS  100
-#define PAGERS      1
+#define PAGERS      2
 
 char    *fmt = "** Child %d, page %d";
-void    *vmRegionTest;
+void    *vmRegion;
 int pageSize;
 char    *zeros;
 
@@ -64,7 +64,7 @@ Child(void *arg)
         action = Rand(2);
         assert ((action >= 0) && (action <= 2));
         snprintf(buffer, sizeof(buffer), fmt, id, page);
-        target = (char *) (vmRegionTest + (page * pageSize));
+        target = (char *) (vmRegion + (page * pageSize));
         Sys_GetTimeofDay(&tod);
         timestamp = tod / 1000000.0;
         if (action == 0) {
@@ -83,8 +83,8 @@ Child(void *arg)
                 USLOSS_Console("%f: Child %d (%d) reading (zero-filled) page %d @ %p\n", 
                     timestamp, id, pid, page, target);
                 if (memcmp(target, zeros, pageSize)) {
-                    USLOSS_Console("Child %d (%d) page %d @ %p is not zero-filled (%s)\n",
-                        id, pid, page, target, target);
+                    USLOSS_Console("Child %d (%d) page %d @ %p is not zero-filled\n",
+                        id, pid, page, target);
                     abort();
                 }
             }
@@ -111,13 +111,13 @@ P4_Startup(void *arg)
     USLOSS_Console("P4_Startup starting.\n");
     USLOSS_Console("Pages: %d, Frames: %d, Children %d, Iterations %d, Priority %d, Pagers %d\n",
     PAGES, FRAMES, CHILDREN, ITERATIONS, PRIORITY, PAGERS);
-    rc = Sys_VmInit(PAGES, PAGES, FRAMES, PAGERS, (void **) &vmRegionTest);
+    rc = Sys_VmInit(PAGES, PAGES, FRAMES, PAGERS, (void **) &vmRegion);
     if (rc != 0) {
         USLOSS_Console("Sys_VmInit failed: %d\n", rc);
         USLOSS_Halt(1);
     }
-    assert(vmRegionTest != NULL);
-	
+    assert(vmRegion != NULL);
+
     pageSize = USLOSS_MmuPageSize();
     zeros = malloc(pageSize);
     memset(zeros, 0, pageSize);

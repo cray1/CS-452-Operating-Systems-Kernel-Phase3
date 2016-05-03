@@ -19,11 +19,11 @@
 #define PAGES       4 // # of pages per child
 #define FRAMES      (CHILDREN * 2)
 #define PRIORITY    3
-#define ITERATIONS  11
+#define ITERATIONS  100
 #define PAGERS      2
 
 char    *fmt = "** Child %d, page %d";
-void    *vmRegionTest;
+void    *vmRegion;
 int pageSize;
 char    *zeros;
 
@@ -69,7 +69,7 @@ Child(void *arg)
         action = Rand(2);
         assert ((action >= 0) && (action <= 2));
         snprintf(buffer, sizeof(buffer), fmt, id, page);
-        target = (char *) (vmRegionTest + (page * pageSize));
+        target = (char *) (vmRegion + (page * pageSize));
         if (action == 0) {
             USLOSS_Console("%f: Child %d (%d) writing page %d @ %p\n", Time(), id, pid, page, target);
             strcpy(target, buffer);
@@ -112,12 +112,12 @@ P4_Startup(void *arg)
     USLOSS_Console("P4_Startup starting.\n");
     USLOSS_Console("Pages: %d, Frames: %d, Children %d, Iterations %d, Priority %d, Pagers %d\n",
     PAGES, FRAMES, CHILDREN, ITERATIONS, PRIORITY, PAGERS);
-    rc = Sys_VmInit(PAGES, PAGES, FRAMES, PAGERS, (void **) &vmRegionTest);
+    rc = Sys_VmInit(PAGES, PAGES, FRAMES, PAGERS, (void **) &vmRegion);
     if (rc != 0) {
         USLOSS_Console("Sys_VmInit failed: %d\n", rc);
         USLOSS_Halt(1);
     }
-    assert(vmRegionTest != NULL);
+    assert(vmRegion != NULL);
 
     pageSize = USLOSS_MmuPageSize();
     zeros = malloc(pageSize);
@@ -143,7 +143,6 @@ void setup(void) {
     char    cmd[100];
     tracks = (PAGES * CHILDREN * USLOSS_MmuPageSize() / USLOSS_DISK_SECTOR_SIZE / USLOSS_DISK_TRACK_SIZE) + 1;
     snprintf(cmd, sizeof(cmd), "~jhh/452-students/usloss/makedisk/makedisk 1 %d", tracks);
-	//system("chmod 777 disk*");
     rc = system(cmd);
     assert(rc == 0);
 }
