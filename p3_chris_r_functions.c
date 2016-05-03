@@ -236,29 +236,29 @@ int Pager(void) {
 				int clock;
 				int tempId;
 		here:
-				P3_P(frame_sem, "Frame_Sem");
-					P3_P(processes[frames_list[swapFrameId].process].mutex, "Process_Sem");
+				P3_P(frame_sem, "Frame_Sem1");
+					P3_P(processes[frames_list[swapFrameId].process].mutex, "Process_Sem1");
 						if(processes[frames_list[swapFrameId].process].pageTable == NULL){
 							int tempId = swapFrameId;
 							swapFrameId++;
 							swapFrameId = swapFrameId%numFrames;
-						P3_V(processes[frames_list[tempId].process].mutex, "Process_Sem");
-						P3_V(frame_sem, "Frame_Sem");
+						P3_V(processes[frames_list[tempId].process].mutex, "Process_Sem1");
+						P3_V(frame_sem, "Frame_Sem1");
 							goto here;
 						}
 						clock = processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock;
-					P3_V(processes[frames_list[swapFrameId].process].mutex, "Process_Sem");
-				P3_V(frame_sem, "Frame_Sem");
+					P3_V(processes[frames_list[swapFrameId].process].mutex, "Process_Sem1");
+				P3_V(frame_sem, "Frame_Sem1");
 
 				while(clock != UNUSED){
-					P3_P(frame_sem, "Frame_Sem");
-						P3_P(processes[frames_list[swapFrameId].process].mutex, "Process_Sem");
+					P3_P(frame_sem, "Frame_Sem2");
+						P3_P(processes[frames_list[swapFrameId].process].mutex, "Process_Sem2");
 							if(processes[frames_list[swapFrameId].process].pageTable == NULL){
 								tempId = swapFrameId;
 								swapFrameId++;
 								swapFrameId = swapFrameId%numFrames;
-							P3_V(processes[frames_list[tempId].process].mutex, "Process_Sem");
-							P3_V(frame_sem, "Frame_Sem");
+							P3_V(processes[frames_list[tempId].process].mutex, "Process_Sem2");
+							P3_V(frame_sem, "Frame_Sem2");
 								goto here;
 							}
 						
@@ -268,15 +268,15 @@ int Pager(void) {
 							swapFrameId++;
 							swapFrameId = swapFrameId%numFrames;
 							clock = processes[frames_list[swapFrameId].process].pageTable[frames_list[swapFrameId].page].clock;
-						P3_P(processes[frames_list[swapFrameId].process].mutex, "Process_Sem");
-					P3_V(frame_sem, "Frame_Sem");
+						P3_V(processes[frames_list[swapFrameId].process].mutex, "Process_Sem2");
+					P3_V(frame_sem, "Frame_Sem2");
 				}
 
-				P3_P(frame_sem, "Frame_Sem");
+				P3_P(frame_sem, "Frame_Sem3");
 					int swapPage = frames_list[swapFrameId].page;
 					int swapPid = frames_list[swapFrameId].pid;
 					frames_list[swapFrameId].used = INUSE;
-				P3_V(frame_sem, "Frame_Sem");
+				P3_V(frame_sem, "Frame_Sem3");
 
 				//if swap frame is dirty
 				if(isFrameDirty(swapFrameId) == TRUE){
@@ -296,14 +296,14 @@ int Pager(void) {
 						USLOSS_Halt(1);
 					}
 
-					P3_P(frame_sem, "Frame_Sem");
+					P3_P(frame_sem, "Frame_Sem4");
 						P3_vmStats.pageOuts++;
-						P3_P(processes[P1_GetPID()].mutex, "Process_Sem");
+						P3_P(processes[P1_GetPID()].mutex, "Process_Sem3");
 							processes[P1_GetPID()].pageTable[swapPage].frame = swapFrameId;
 							processes[P1_GetPID()].pageTable[swapPage].state = INCORE;
-						P3_V(processes[P1_GetPID()].mutex, "Process_Sem");
+						P3_V(processes[P1_GetPID()].mutex, "Process_Sem3");
 						int swapBlock = processes[swapPid].pageTable[swapPage].block;
-					P3_V(frame_sem, "Frame_Sem");
+					P3_V(frame_sem, "Frame_Sem4");
 
 					DebugPrint("Pager: swapBlock [%d], current PID: %d!\n", swapBlock, P1_GetPID());
 					if(swapBlock < 0){
@@ -311,20 +311,20 @@ int Pager(void) {
 						DebugPrint("Pager: swapBlock [%d] is -1, getting new block, current PID: %d!\n", swapBlock, P1_GetPID());
 
 						while(disk_list[nextBlock] != UNUSED){
-							P3_P(frame_sem, "Frame_Sem");
+							P3_P(frame_sem, "Frame_Sem5");
 								nextBlock = (nextBlock + 1)%track;
-							P3_V(frame_sem, "Frame_Sem");
+							P3_V(frame_sem, "Frame_Sem5");
 						}
 
-						P3_P(frame_sem, "Frame_Sem");
+						P3_P(frame_sem, "Frame_Sem6");
 							disk_list[nextBlock] = INUSE;
 							swapBlock = nextBlock;
 							nextBlock = (nextBlock+1)%track;
-							P3_P(processes[swapPid].mutex, "Process_Sem");
+							P3_P(processes[swapPid].mutex, "Process_Sem4");
 								processes[swapPid].pageTable[swapPage].block = swapBlock;
-							P3_V(processes[swapPid].mutex, "Process_Sem");
+							P3_V(processes[swapPid].mutex, "Process_Sem4");
 							DebugPrint("Pager: swapBlock assigned [%d], current PID: %d!\n", swapBlock, P1_GetPID());
-						P3_V(frame_sem, "Frame_Sem");
+						P3_V(frame_sem, "Frame_Sem6");
 					}
 
 					//create buffer to store page
