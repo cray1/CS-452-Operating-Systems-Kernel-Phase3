@@ -22,7 +22,7 @@
 #define FRAMES      (CONCURRENT * 2)
 #define PRIORITY    3
 #define ITERATIONS  100
-#define PAGERS      2
+#define PAGERS      1
 
 char    *fmt = "** Child %d, page %d";
 void    *vmRegionTest;

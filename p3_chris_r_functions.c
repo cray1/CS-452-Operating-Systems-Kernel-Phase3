@@ -42,9 +42,11 @@ void P3_Quit(pid)
 		int i;
 		i = 0;
 		for(i=0; i<numPages; i++){
-			frames_list[processes[pid].pageTable[i].frame].used = UNUSED;
-			frames_list[processes[pid].pageTable[i].frame].page = -1;
-			frames_list[processes[pid].pageTable[i].frame].process = -1;
+			if(processes[pid].pageTable[i].frame != -1){
+				frames_list[processes[pid].pageTable[i].frame].used = UNUSED;
+				frames_list[processes[pid].pageTable[i].frame].page = -1;
+				frames_list[processes[pid].pageTable[i].frame].process = -1;
+			}
 			processes[pid].pageTable[i].frame = -1;
 			processes[pid].pageTable[i].state = UNUSED;
 			processes[pid].pageTable[i].block = -1;
@@ -52,7 +54,7 @@ void P3_Quit(pid)
 		}
 
 		/* Clean up the page table. */
-		free(processes[pid].pageTable); //this is where basic fails
+		free(processes[pid].pageTable); 
 		processes[pid].numPages = 0;
 		processes[pid].pageTable = NULL;
 	}
@@ -178,10 +180,6 @@ int Pager(void) {
 			P1_Quit(0);
 		}
 		
-		P1_P(pager_sem);
-		P1_V(pager_sem);
-		
-		
 		DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
 		/* Find a free frame */
@@ -266,12 +264,12 @@ int Pager(void) {
 				if(swapBlock < 0){
 					//get new block
 					DebugPrint("Pager: swapBlock [%d] is -1, getting new block, current PID: %d!\n", swapBlock, P1_GetPID());								
-					P1_P(pager_sem);
+					P1_P(process_sem);
 					swapBlock = nextBlock;
 					nextBlock++;
 					processes[swapPid].pageTable[swapPage].block = swapBlock;
 					DebugPrint("Pager: swapBlock assigned [%d], current PID: %d!\n", swapBlock, P1_GetPID());								
-					P1_V(pager_sem);
+					P1_V(process_sem);
 				}
 
 				//create buffer to store page
@@ -384,9 +382,8 @@ int Pager(void) {
 		DebugPrint("Pager: send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 
 		/* Unblock waiting (faulting) process */
-		
 		P2_MboxSend(fault.mbox, &fault, &size);
-
+		
 		DebugPrint("Pager: done with send on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
 		
 	}

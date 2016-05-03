@@ -49,8 +49,9 @@ int P3_Startup(void *arg){
 			helper->f = P4_Startup;
 			helper->arg = NULL;
 	Sys_Spawn("P4_Startup",&P4_Startup_Spawn_Wrapper, (void *) helper,4 * USLOSS_MIN_STACK,3,&p4_pid);
-	 Sys_Wait(&p4_pid,&status);
-
+	Sys_Sleep(10);
+	Sys_Wait(&p4_pid,&status);
+	
 	return 0;
 }
 
