@@ -83,8 +83,8 @@ Child(void *arg)
                 USLOSS_Console("%f: Child %d (%d) reading (zero-filled) page %d @ %p\n", 
                     timestamp, id, pid, page, target);
                 if (memcmp(target, zeros, pageSize)) {
-                    USLOSS_Console("Child %d (%d) page %d @ %p is not zero-filled\n",
-                        id, pid, page, target);
+                    USLOSS_Console("Child %d (%d) page %d @ %p is not zero-filled (%s)\n",
+                        id, pid, page, target, target);
                     abort();
                 }
             }
@@ -117,7 +117,7 @@ P4_Startup(void *arg)
         USLOSS_Halt(1);
     }
     assert(vmRegionTest != NULL);
-
+	
     pageSize = USLOSS_MmuPageSize();
     zeros = malloc(pageSize);
     memset(zeros, 0, pageSize);
