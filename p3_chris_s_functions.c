@@ -68,8 +68,12 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	int disk;
 	P2_DiskSize(1,&sector, &track, &disk);
 	
-	disk_list = malloc(sizeof(int)*track);
-	memset(disk_list, 0, sizeof(int)*track);
+		
+	int diskSize = sector * track * disk;
+	int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
+	
+	disk_list = malloc(sizeof(int)*numBlocksPerDisk);
+	memset(disk_list, 0, sizeof(int)*numBlocksPerDisk);
 
 	/*
 	 * Create the page fault mailbox and fork the pagers here.

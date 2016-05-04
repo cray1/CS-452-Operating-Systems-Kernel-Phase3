@@ -87,7 +87,7 @@ int pid; {
 			processes[pid].pageTable = NULL;
 		}
 	P3_V(processes[pid].mutex, "Process_Sem", pid);
-
+	P1_DumpProcesses();
 }
 
 
@@ -144,7 +144,6 @@ void *arg; /* Address that caused the fault */
 		assert(size == sizeof(fault));
 		size = 0;
 		DebugPrint("FaultHandler: waiting to receive on fault mbox %d, page %d current PID: %d!\n", fault.mbox,  page, P1_GetPID());
-
 		status = P2_MboxReceive(fault.mbox, NULL, &size);
 		DebugPrint("FaultHandler: done receive on fault mbox %d, page %d current PID: %d!\n", fault.mbox,  page, P1_GetPID());
 		assert(status == 0);
@@ -220,11 +219,12 @@ int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
 			P2_MboxReceive(pagerMbox, (void *) &fault, &size);
 		P3_V(pager_sem, "Pager_Sem", -1);
 
-			DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
-			if(fault.pid == -1 || processes[P1_GetPID()].pager_daemon_marked_to_kill == TRUE){
-						P1_Quit(0);
-					}
-			P3_P(pager_mutex, "Pager_Mutex", -1);
+		DebugPrint("Pager received on mbox: %d, current PID: %d!\n", pagerMbox, P1_GetPID());
+		if(fault.pid == -1 || processes[P1_GetPID()].pager_daemon_marked_to_kill == TRUE){
+			P1_Quit(0);
+		}
+	
+		P3_P(pager_mutex, "Pager_Mutex", -1);
 			/* Find a free frame */
 			int freeFrameFound = FALSE;
 			int freeFrameId;
@@ -346,7 +346,7 @@ int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
 					//write to disk
 					P3_P(disk_sem, "Disk_Sem", -1);
 						int w_t = b/blocksPerTrack;
-						int w_s = ((b%2) * sectors_per_Page); 					
+						int w_s = ((b%blocksPerTrack) * sectors_per_Page); 					
 						//USLOSS_Console("block: %d\tw_t: %d,\tw_s:%d \n", b, w_t, w_s);
 						P2_DiskWrite(unit,w_t,w_s,sectors_per_Page,buffer);
 					P3_V(disk_sem, "Disk_Sem", -1);
@@ -427,7 +427,7 @@ int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
 
 				P3_P(disk_sem, "Disk_Sem", -1);
 					int t = block/blocksPerTrack;
-					int s = ((block%2) * sectors_per_Page); 
+					int s = ((block%blocksPerTrack) * sectors_per_Page); 
 					//USLOSS_Console("block: %d\tr_t: %d,\tr_s:%d \n", block, t, s);
 					P2_DiskRead(unit,t,s,sectors_per_Page, buf);
 				P3_V(disk_sem, "Disk_Sem", -1);
