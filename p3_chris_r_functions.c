@@ -192,7 +192,9 @@ int Pager(void) {
 	int sector;
 	int track;
 	int disk;
+	P1_P(disk_sem);
 	P2_DiskSize(unit, &sector, &track, &disk);
+	P1_V(disk_sem);
 	int sectors_per_Page = USLOSS_MmuPageSize()/sector;
 	int blocksPerTrack = track / sectors_per_Page;
 	int diskSize = sector * track * disk;
@@ -256,7 +258,7 @@ int Pager(void) {
 				frame = freeFrameId;
 			}
 			else{
-
+				P3_vmStats.replaced++;
 				//use clock algorithm to find best frame to use
 				//find random frame to use (for now)
 				int clock;

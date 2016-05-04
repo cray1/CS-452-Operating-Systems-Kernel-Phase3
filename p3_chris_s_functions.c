@@ -66,11 +66,13 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	int sector;
 	int track;
 	int disk;
-	P2_DiskSize(1,&sector, &track, &disk);
-	
+	P1_P(disk_sem);
+		P2_DiskSize(1,&sector, &track, &disk);
+	P1_V(disk_sem);
 		
 	int diskSize = sector * track * disk;
 	int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
+	
 	
 	disk_list = malloc(sizeof(int)*numBlocksPerDisk);
 	memset(disk_list, 0, sizeof(int)*numBlocksPerDisk);
@@ -82,6 +84,9 @@ int P3_VmInit(int mappings, int pages, int frames, int pagers) {
 	pagerMbox = P2_MboxCreate(P1_MAXPROC, sizeof(Fault)); //added by cray1
 
 	memset((char *) &P3_vmStats, 0, sizeof(P3_VmStats));
+	
+	P3_vmStats.blocks = numBlocksPerDisk;
+	P3_vmStats.freeBlocks = numBlocksPerDisk;
 	P3_vmStats.pages = pages;
 	P3_vmStats.frames = frames;
 	numPages = pages;
