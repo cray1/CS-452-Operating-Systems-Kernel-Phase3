@@ -76,8 +76,8 @@ int pid; {
 					P3_P(disk_list_sem,"DL_Sem", -1);
 						disk_list[processes[pid].pageTable[i].block] = UNUSED;
 					P3_V(disk_list_sem,"DL_Sem", -1);
+					processes[pid].pageTable[i].block = -1;
 				}
-				processes[pid].pageTable[i].block = -1;
 				USLOSS_MmuUnmap(TAG,i);
 			}
 
@@ -87,7 +87,6 @@ int pid; {
 			processes[pid].pageTable = NULL;
 		}
 	P3_V(processes[pid].mutex, "Process_Sem", pid);
-	P1_DumpProcesses();
 }
 
 
@@ -311,9 +310,14 @@ int Pager(void) {
 						//get new block
 						DebugPrint("Pager: swapBlock [%d] is -1, getting new block, current PID: %d!\n", swapBlock, P1_GetPID());
 
+						P3_P(disk_list_sem, "Frame_Sem5", -1);
+							int blockUsed = disk_list[nextBlock];
+						P3_V(disk_list_sem, "Frame_Sem5", -1);
+						
 						while(disk_list[nextBlock] != UNUSED){
 							P3_P(disk_list_sem, "Frame_Sem5", -1);
 								nextBlock = (nextBlock + 1)%numBlocksPerDisk;
+								blockUsed = disk_list[nextBlock];
 							P3_V(disk_list_sem, "Frame_Sem5", -1);
 						}
 
