@@ -188,13 +188,21 @@ P1_Semaphore pager_mutex;
  */
 int Pager(void) {
 	DebugPrint("Pager called, current PID: %d!\n", P1_GetPID());
-	int unit = 1;
-	int sector;
-	int track;
-	int disk;
-	P2_DiskSize(unit, &sector, &track, &disk);
+
+
+ int unit = 1;
+int sector;
+int track;
+int disk;
+P2_DiskSize(unit, &sector, &track, &disk);
+int sectors_per_Page = USLOSS_MmuPageSize()/sector;
+int blocksPerTrack = sectors_per_Page / track;
+int diskSize = sector * track * disk;
+int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
 	int swapFrameId = 0; //zero for now
 	
+	//blockNum /
+
 	P3_P(pager_sem, "Pager_Sem", -1);
 		if(pager_mutex == NULL){
 			pager_mutex  = P1_SemCreate(1);
@@ -305,14 +313,14 @@ int Pager(void) {
 
 						while(disk_list[nextBlock] != UNUSED){
 							P3_P(disk_list_sem, "Frame_Sem5", -1);
-								nextBlock = (nextBlock + 1)%track;
+								nextBlock = (nextBlock + 1)%numBlocksPerDisk;
 							P3_V(disk_list_sem, "Frame_Sem5", -1);
 						}
 
 						P3_P(disk_list_sem,"DL_Sem", -1);
 							disk_list[nextBlock] = INUSE;
 							swapBlock = nextBlock;
-							nextBlock = (nextBlock+1)%track;
+							nextBlock = (nextBlock+1)%numBlocksPerDisk;
 						P3_V(disk_list_sem,"DL_Sem", -1);
 						
 						P3_P(processes[swapPid].mutex, "Process_Sem4", swapPid);
@@ -337,7 +345,7 @@ int Pager(void) {
 
 					//write to disk
 					P3_P(disk_sem, "Disk_Sem", -1);
-						P2_DiskWrite(unit,b,0,track,buffer);
+						P2_DiskWrite(unit,b,0,sectors,buffer);
 					P3_V(disk_sem, "Disk_Sem", -1);
 					
 					DebugPrint("\n\n%s @ %p %d %d %d %d\n\n", buffer, frameAddr, swapPage, swapFrameId, swapBlock, P1_GetPID());
@@ -415,7 +423,7 @@ int Pager(void) {
 				char *buf = malloc(USLOSS_MmuPageSize());
 
 				P3_P(disk_sem, "Disk_Sem", -1);
-					P2_DiskRead(unit,block,0,track, buf);
+					P2_DiskRead(unit,?,?,sectors, buf);
 				P3_V(disk_sem, "Disk_Sem", -1);
 				
 				/*P3_P(processes[fault.pid].mutex, "Process_Sem", fault.pid);
