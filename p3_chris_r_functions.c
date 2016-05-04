@@ -189,15 +189,15 @@ int Pager(void) {
 	DebugPrint("Pager called, current PID: %d!\n", P1_GetPID());
 
 
- int unit = 1;
-int sector;
-int track;
-int disk;
-P2_DiskSize(unit, &sector, &track, &disk);
-int sectors_per_Page = USLOSS_MmuPageSize()/sector;
-int blocksPerTrack = track / sectors_per_Page;
-int diskSize = sector * track * disk;
-int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
+	int unit = 1;
+	int sector;
+	int track;
+	int disk;
+	P2_DiskSize(unit, &sector, &track, &disk);
+	int sectors_per_Page = USLOSS_MmuPageSize()/sector;
+	int blocksPerTrack = track / sectors_per_Page;
+	int diskSize = sector * track * disk;
+	int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
 	int swapFrameId = 0; //zero for now
 	
 	//blockNum /
