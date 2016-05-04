@@ -196,7 +196,7 @@ int track;
 int disk;
 P2_DiskSize(unit, &sector, &track, &disk);
 int sectors_per_Page = USLOSS_MmuPageSize()/sector;
-int blocksPerTrack = sectors_per_Page / track;
+int blocksPerTrack = track / sectors_per_Page;
 int diskSize = sector * track * disk;
 int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
 	int swapFrameId = 0; //zero for now
@@ -345,7 +345,10 @@ int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
 
 					//write to disk
 					P3_P(disk_sem, "Disk_Sem", -1);
-						P2_DiskWrite(unit,b,0,sectors,buffer);
+						int w_t = b/blocksPerTrack;
+						int w_s = ((b%2) * sectors_per_Page); 					
+						//USLOSS_Console("block: %d\tw_t: %d,\tw_s:%d \n", b, w_t, w_s);
+						P2_DiskWrite(unit,w_t,w_s,sectors_per_Page,buffer);
 					P3_V(disk_sem, "Disk_Sem", -1);
 					
 					DebugPrint("\n\n%s @ %p %d %d %d %d\n\n", buffer, frameAddr, swapPage, swapFrameId, swapBlock, P1_GetPID());
@@ -356,7 +359,7 @@ int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
 
 					USLOSS_MmuUnmap(TAG,swapPage);
 
-					USLOSS_Console("swappid: %d\t page: %d\n", swapPid,swapPage);
+					//USLOSS_Console("swappid: %d\t page: %d\n", swapPid,swapPage);
 					P3_P(processes[P1_GetPID()].mutex, "Process_Sem", P1_GetPID());
 						processes[P1_GetPID()].pageTable[swapPage].frame = -1;
 						processes[P1_GetPID()].pageTable[swapPage].state = UNUSED;
@@ -423,7 +426,10 @@ int numBlocksPerDisk = diskSize /  USLOSS_MmuPageSize();
 				char *buf = malloc(USLOSS_MmuPageSize());
 
 				P3_P(disk_sem, "Disk_Sem", -1);
-					P2_DiskRead(unit,?,?,sectors, buf);
+					int t = block/blocksPerTrack;
+					int s = ((block%2) * sectors_per_Page); 
+					//USLOSS_Console("block: %d\tr_t: %d,\tr_s:%d \n", block, t, s);
+					P2_DiskRead(unit,t,s,sectors_per_Page, buf);
 				P3_V(disk_sem, "Disk_Sem", -1);
 				
 				/*P3_P(processes[fault.pid].mutex, "Process_Sem", fault.pid);
